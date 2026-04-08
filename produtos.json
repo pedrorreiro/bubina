@@ -1,0 +1,22 @@
+[
+  {
+    "nome": "Pão Francês",
+    "preco": 2.99,
+    "id": 1
+  },
+  {
+    "nome": "Coca-Cola",
+    "preco": 4.5,
+    "id": 2
+  },
+  {
+    "nome": "Pizza",
+    "preco": 59.9,
+    "id": 3
+  },
+  {
+    "nome": "Uva verde sem caroço",
+    "preco": 7.99,
+    "id": 4
+  }
+]

@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Impressora Térmica</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Base ─────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0f14;
+      --surface:   #13161e;
+      --card:      rgba(255,255,255,0.04);
+      --border:    rgba(255,255,255,0.08);
+      --accent:    #6c63ff;
+      --accent2:   #a78bfa;
+      --green:     #34d399;
+      --red:       #f87171;
+      --yellow:    #fbbf24;
+      --text:      #f1f5f9;
+      --muted:     #64748b;
+      --radius:    14px;
+      --shadow:    0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 60px;
+    }
+
+    /* ── Header ─────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #1a1d2e 0%, #0d0f14 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    header .logo {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: grid; place-items: center;
+      font-size: 18px;
+    }
+    header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+    header .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--muted);
+      margin-left: auto;
+      transition: background .3s;
+    }
+    header .status-dot.connected { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    header .status-label { font-size: 13px; color: var(--muted); }
+
+    /* ── Layout ──────────────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 20px 14px; }
+
+    /* ── Tabs ─────────────────────────────────────────── */
+    .tabs {
+      display: flex; gap: 4px;
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 5px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      overflow-x: auto;
+      scrollbar-width: none; /* Hide scrollbar Firefox */
+    }
+    .tabs::-webkit-scrollbar { display: none; } /* Safari and Chrome */
+    .tab-btn {
+      flex: 1;
+      padding: 10px 16px;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      border-radius: 9px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .2s;
+      font-family: inherit;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+    }
+    .tab-btn:hover { color: var(--text); background: var(--card); }
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── Cards ────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+      backdrop-filter: blur(8px);
+    }
+    .card-title {
+      font-size: 15px; font-weight: 600;
+      margin-bottom: 18px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-title span { font-size: 18px; }
+
+    /* ── Form elements ───────────────────────────────── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    @media (max-width: 640px) { .form-grid, .form-grid.cols-3 { grid-template-columns: 1fr; } }
+
+    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; }
+    input, select, textarea {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text);
+      padding: 12px 14px;
+      font-size: 16px; /* Prevents iOS auto-zoom */
+      font-family: inherit;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    textarea { resize: vertical; }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(108,99,255,.15);
+    }
+    select option { background: #1e2130; }
+
+    /* ── Buttons ─────────────────────────────────────── */
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 9px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .2s;
+      display: inline-flex; align-items: center; gap: 7px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+    }
+    .btn-primary:hover { opacity: .88; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(108,99,255,.4); }
+    .btn-secondary { background: rgba(255,255,255,0.07); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: rgba(255,255,255,0.12); }
+    .btn-danger { background: rgba(248,113,113,.15); color: var(--red); border: 1px solid rgba(248,113,113,.25); }
+    .btn-danger:hover { background: rgba(248,113,113,.25); }
+    .btn-success { background: linear-gradient(135deg, #059669, var(--green)); color: #fff; }
+    .btn-success:hover { opacity: .88; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(52,211,153,.3); }
+    .btn-sm { padding: 8px 14px; font-size: 13px; border-radius: 7px; }
+    .btn:disabled { opacity: .4; cursor: not-allowed; transform: none !important; }
+
+    /* ── Produto List ─────────────────────────────────── */
+    .produto-list { display: flex; flex-direction: column; gap: 8px; }
+    .produto-item {
+      display: flex; align-items: center; gap: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      transition: border-color .2s;
+    }
+    .produto-item:hover { border-color: rgba(108,99,255,.3); }
+    .produto-nome { flex: 1; font-size: 14px; font-weight: 500; }
+    .produto-preco { font-size: 14px; color: var(--accent2); font-weight: 600; min-width: 70px; text-align: right; }
+    .empty-state { text-align: center; color: var(--muted); padding: 32px; font-size: 14px; }
+
+    /* ── Itens do Pedido ──────────────────────────────── */
+    .pedido-item {
+      display: grid; grid-template-columns: 1fr auto auto auto;
+      gap: 10px; align-items: center;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+    }
+    .pedido-item .nome-col { font-size: 14px; font-weight: 500; }
+    .pedido-item input[type="number"] { width: 70px; text-align: center; }
+    .pedido-item .subtotal { font-size: 13px; color: var(--accent2); font-weight: 600; min-width: 70px; text-align: right; }
+
+    /* ── Total ────────────────────────────────────────── */
+    .total-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(108,99,255,.1);
+      border: 1px solid rgba(108,99,255,.25);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-top: 16px;
+    }
+    .total-label { font-size: 14px; color: var(--muted); }
+    .total-valor { font-size: 22px; font-weight: 700; color: var(--accent2); }
+
+    /* ── Toast ────────────────────────────────────────── */
+    .toast-container { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 8px; z-index: 9999; }
+    .toast {
+      padding: 13px 18px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      backdrop-filter: blur(12px);
+      animation: slide-in .3s ease;
+      box-shadow: var(--shadow);
+      display: flex; align-items: center; gap: 9px;
+    }
+    .toast.success { background: rgba(52,211,153,.15); border: 1px solid rgba(52,211,153,.3); color: var(--green); }
+    .toast.error   { background: rgba(248,113,113,.15); border: 1px solid rgba(248,113,113,.3); color: var(--red); }
+    .toast.info    { background: rgba(108,99,255,.15);  border: 1px solid rgba(108,99,255,.3);  color: var(--accent2); }
+
+    @keyframes slide-in { from { transform: translateX(120%); opacity: 0; } to { transform: none; opacity: 1; } }
+    @keyframes fade-out { to { opacity: 0; transform: translateX(120%); } }
+
+    @media (min-width: 900px) {
+      #grid-pedido { grid-template-columns: 1.5fr 1fr !important; }
+    }
+
+    /* ── Divider ──────────────────────────────────────── */
+    .divider { height: 1px; background: var(--border); margin: 18px 0; }
+
+    /* ── Printer selector ────────────────────────────── */
+    .printer-bar {
+      display: flex; gap: 12px; align-items: flex-end;
+    }
+    .printer-bar > div { flex: 1; }
+
+    /* ── Section header ──────────────────────────────── */
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .section-header h3 { font-size: 14px; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="logo">🖨️</div>
+  <h1>Impressora Térmica</h1>
+  <span class="status-label" id="status-label">Desconectado</span>
+  <div class="status-dot" id="status-dot"></div>
+</header>
+
+<!-- Tabs -->
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('pedido')" id="tab-pedido">🧾 Pedido</button>
+    <button class="tab-btn" onclick="switchTab('ia')" id="tab-ia">🤖 Importar IA</button>
+    <button class="tab-btn" onclick="switchTab('produtos')" id="tab-produtos">📦 Produtos</button>
+    <button class="tab-btn" onclick="switchTab('loja')" id="tab-loja">⚙️ Loja</button>
+  </div>
+
+  <!-- ═══════════ TAB: PEDIDO ═══════════ -->
+  <div class="tab-content active" id="content-pedido">
+    <div style="display: grid; grid-template-columns: 1fr; gap: 20px;" id="grid-pedido">
+      <!-- Formulário de Pedido (Esquerda) -->
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+
+    <!-- Impressora -->
+    <div class="card">
+      <div class="card-title"><span>🔌</span> Impressora</div>
+      <div class="printer-bar">
+        <div>
+          <label>Dispositivo</label>
+          <select id="sel-impressora" onchange="onPrinterChange()">
+            <option value="">Carregando...</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary" onclick="carregarImpressoras()">↻ Atualizar</button>
+      </div>
+    </div>
+
+    <!-- CPF -->
+    <div class="card">
+      <div class="card-title"><span>👤</span> Consumidor</div>
+      <div>
+        <label>CPF</label>
+        <input type="text" id="cpf" value="" placeholder="000.000.000-00" oninput="atualizarLivePreview()" />
+      </div>
+    </div>
+
+    <!-- Itens -->
+    <div class="card">
+      <div class="card-title"><span>🛒</span> Itens do Pedido</div>
+
+      <!-- Adicionar do catálogo -->
+      <div class="section-header">
+        <h3>Adicionar do catálogo</h3>
+      </div>
+      <div style="display:flex; gap:10px; margin-bottom:18px;">
+        <select id="sel-catalogo" style="flex:1">
+          <option value="">Selecione um produto...</option>
+        </select>
+        <button class="btn btn-secondary" onclick="adicionarDoCatalogo()">+ Adicionar</button>
+      </div>
+
+      <!-- Adicionar avulso -->
+      <div class="section-header">
+        <h3>Adicionar avulso</h3>
+      </div>
+      <div class="form-grid cols-3" style="margin-bottom:12px;">
+        <div>
+          <label>Nome do item</label>
+          <input type="text" id="avulso-nome" placeholder="Ex: Desconto" />
+        </div>
+        <div>
+          <label>Qtd (vazio = sem qtd)</label>
+          <input type="number" id="avulso-qtd" placeholder="1" min="0" step="1" />
+        </div>
+        <div>
+          <label>Preço unit. (R$)</label>
+          <input type="number" id="avulso-preco" placeholder="0.00" step="0.01" />
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="adicionarAvulso()">+ Adicionar item avulso</button>
+
+
+
+      <div class="divider"></div>
+
+      <!-- Lista de itens -->
+      <div id="pedido-itens">
+        <div class="empty-state">Nenhum item adicionado ainda.</div>
+      </div>
+
+      <!-- Total -->
+      <div class="total-bar" style="margin-bottom:0; border-radius: 8px;">
+        <span class="total-label" id="label-subtotal">Total dos Itens</span>
+        <span class="total-valor" id="total-itens">R$ 0,00</span>
+      </div>
+    </div>
+
+    <!-- Descontos -->
+    <div class="card">
+      <div class="card-title"><span>🏷️</span> Descontos</div>
+      <div class="form-grid cols-3" style="margin-bottom:12px;">
+        <div>
+          <label>Motivo/Descrição (Opcional)</label>
+          <input type="text" id="desc-nome" placeholder="Desconto à vista" />
+        </div>
+        <div>
+          <label>Tipo</label>
+          <select id="desc-tipo">
+            <option value="valor">R$ (Valor Fixo)</option>
+            <option value="percentual">% (Percentual)</option>
+          </select>
+        </div>
+        <div>
+          <label>Valor Numérico</label>
+          <input type="number" id="desc-valor" placeholder="0.00" step="0.01" min="0" />
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="adicionarDesconto()">+ Aplicar Desconto</button>
+
+      <div id="container-descontos" style="margin-top: 18px;">
+        <div id="pedido-descontos"></div>
+        <div class="total-bar" id="bar-total-final" style="display: none; margin-top: 14px; background: rgba(52,211,153,.15); border: 1px solid rgba(52,211,153,.3); color: var(--green);">
+          <span class="total-label">Total a Pagar</span>
+          <span class="total-valor" id="total-final">R$ 0,00</span>
+        </div>
+      </div>
+    </div>
+
+        <!-- Botão imprimir -->
+        <button class="btn btn-success" style="width:100%; padding:16px; font-size:16px;" onclick="imprimir()" id="btn-imprimir">
+          🖨️ Imprimir Cupom
+        </button>
+      </div>
+
+      <!-- Live Preview (Direita) -->
+      <div class="card" style="position: sticky; top: 20px; height: fit-content;">
+        <div class="card-title" style="margin-bottom: 12px; display: flex; justify-content: space-between;">
+          <span>👁️ Preview Ao Vivo</span>
+        </div>
+        <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; overflow-x: auto; display: flex; justify-content: center;">
+          <pre id="preview-cupom" style="font-family: 'Courier New', Courier, monospace; font-size: 13.5px; line-height: 1.3; color: var(--text); margin: 0; min-height: 200px; width: fit-content;">Carregando simulação...</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TAB: PRODUTOS ═══════════ -->
+  <div class="tab-content" id="content-produtos">
+
+    <!-- Form novo produto -->
+    <div class="card">
+      <div class="card-title"><span>➕</span> Novo Produto</div>
+      <div class="form-grid" style="margin-bottom:14px;">
+        <div>
+          <label>Nome</label>
+          <input type="text" id="prod-nome" placeholder="Ex: Pão Francês" />
+        </div>
+        <div>
+          <label>Preço padrão (R$)</label>
+          <input type="number" id="prod-preco" placeholder="0.00" step="0.01" min="0" />
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="salvarProduto()">Salvar produto</button>
+    </div>
+
+    <!-- Listagem -->
+    <div class="card">
+      <div class="card-title"><span>📋</span> Catálogo</div>
+      <div class="produto-list" id="lista-produtos">
+        <div class="empty-state">Nenhum produto cadastrado.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TAB: IMPORTAR IA ═══════════ -->
+  <div class="tab-content" id="content-ia">
+    <div class="card">
+      <div class="card-title"><span>🤖</span> Importar Fatura via IA</div>
+      <p style="font-size: 14px; color: var(--muted); margin-bottom: 16px;">
+        Cole o texto copiado do aplicativo do cartão ou envie um print da tela para extrair os itens automaticamente e adicionar ao <b>pedido em andamento</b>.
+      </p>
+      <div class="form-grid" style="margin-bottom:12px;">
+        <div>
+          <label>Colar texto da fatura</label>
+          <textarea id="fatura-texto" rows="5" placeholder="Cole aqui os dados da fatura..."></textarea>
+        </div>
+        <div>
+          <label>Ou enviar imagem (.jpg/.png/.pdf)</label>
+          <input type="file" id="fatura-arquivo" accept="image/png, image/jpeg, application/pdf" style="padding: 12px 13px;" />
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="analisarFaturaIA()" id="btn-analisar" style="width: 100%; justify-content: center; padding: 14px; font-size: 15px;">
+        Analisar e Importar Compras para o Pedido
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════ TAB: LOJA ═══════════ -->
+  <div class="tab-content" id="content-loja">
+    <div class="card">
+      <div class="card-title"><span>🏪</span> Configurações da Loja</div>
+      <div class="form-grid" style="margin-bottom:14px;">
+        <div>
+          <label>Nome da Loja</label>
+          <input type="text" id="loja-nome" placeholder="MERCADO DO PEDRO" />
+        </div>
+        <div>
+          <label>Chave PIX</label>
+          <input type="text" id="loja-pix" placeholder="CPF, telefone ou e-mail" />
+        </div>
+        <div>
+          <label>Cidade</label>
+          <input type="text" id="loja-cidade" placeholder="São Paulo" />
+        </div>
+        <div>
+          <label>Largura (colunas)</label>
+          <input type="number" id="loja-colunas" value="30" min="24" max="80" />
+        </div>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-primary" onclick="salvarLoja()">💾 Salvar configurações</button>
+        <button class="btn btn-secondary" onclick="testarLargura(event)">📏 Imprimir Teste de Margem (Econômico)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toasts"></div>
+
+<script>
+  // ── Estado ────────────────────────────────────────────────────────────
+  let pedidoItens = [];
+  let produtos    = [];
+  let impressoraAtual = null;
+  let pedidoDescontos = [];
+
+  // ── Tabs ──────────────────────────────────────────────────────────────
+  function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    document.getElementById('content-' + name).classList.add('active');
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────────────
+  function toast(msg, type = 'info') {
+    const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+    document.getElementById('toasts').appendChild(el);
+    setTimeout(() => {
+      el.style.animation = 'fade-out .3s ease forwards';
+      setTimeout(() => el.remove(), 300);
+    }, 3500);
+  }
+
+  // ── Impressoras ───────────────────────────────────────────────────────
+  async function carregarImpressoras() {
+    const sel = document.getElementById('sel-impressora');
+    sel.innerHTML = '<option value="">Buscando...</option>';
+    try {
+      const data = await fetch('/impressoras').then(r => r.json());
+      sel.innerHTML = '<option value="">Selecione uma impressora...</option>';
+      data.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = JSON.stringify(d);
+        opt.textContent = (d.tipo === 'rede' ? '🌐 ' : '📶 ') + d.label;
+        sel.appendChild(opt);
+      });
+      if (!data.length) {
+        sel.innerHTML = '<option value="">Nenhuma impressora encontrada</option>';
+      }
+    } catch {
+      toast('Não foi possível listar as impressoras', 'error');
+    }
+  }
+
+  async function onPrinterChange() {
+    const sel = document.getElementById('sel-impressora');
+    const val = sel.value;
+    const dot   = document.getElementById('status-dot');
+    const label = document.getElementById('status-label');
+
+    if (!val) {
+      impressoraAtual = null;
+      dot.classList.remove('connected');
+      label.textContent = 'Desconectado';
+      return;
+    }
+
+    const impressoraCandidata = JSON.parse(val);
+    label.textContent = `Conectando a ${impressoraCandidata.label}...`;
+    dot.classList.remove('connected');
+    dot.style.background = 'var(--yellow)';
+
+    try {
+      const res = await fetch('/testar-impressora', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(impressoraCandidata)
+      });
+      const data = await res.json();
+      
+      if (data.ok) {
+        impressoraAtual = impressoraCandidata;
+        dot.style.background = '';
+        dot.classList.add('connected');
+        label.textContent = impressoraAtual.label;
+        toast('Impressora conectada com sucesso!', 'success');
+      } else {
+        throw new Error(data.erro);
+      }
+    } catch (err) {
+      impressoraAtual = null;
+      sel.value = '';
+      dot.style.background = '';
+      dot.classList.remove('connected');
+      label.textContent = 'Desconectado';
+      toast(`Falha ao conectar: ${err.message}`, 'error');
+    }
+  }
+
+  // ── Produtos ──────────────────────────────────────────────────────────
+  async function carregarProdutos() {
+    const data = await fetch('/produtos').then(r => r.json());
+    produtos = data;
+    renderProdutos();
+    renderCatalogSelect();
+  }
+
+  function renderProdutos() {
+    const el = document.getElementById('lista-produtos');
+    if (!produtos.length) {
+      el.innerHTML = '<div class="empty-state">Nenhum produto cadastrado.</div>';
+      return;
+    }
+    el.innerHTML = produtos.map(p => `
+      <div class="produto-item" id="pitem-${p.id}">
+        <div class="produto-nome">${p.nome}</div>
+        <div class="produto-preco">R$ ${parseFloat(p.preco).toFixed(2).replace('.', ',')}</div>
+        <button class="btn btn-danger btn-sm" onclick="deletarProduto(${p.id})">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function renderCatalogSelect() {
+    const sel = document.getElementById('sel-catalogo');
+    sel.innerHTML = '<option value="">Selecione um produto...</option>';
+    produtos.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = JSON.stringify(p);
+      opt.textContent = `${p.nome} — R$ ${parseFloat(p.preco).toFixed(2)}`;
+      sel.appendChild(opt);
+    });
+  }
+
+  async function salvarProduto() {
+    const nome  = document.getElementById('prod-nome').value.trim();
+    const preco = parseFloat(document.getElementById('prod-preco').value);
+    if (!nome || isNaN(preco)) { toast('Preencha nome e preço', 'error'); return; }
+
+    await fetch('/produtos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, preco })
+    });
+    document.getElementById('prod-nome').value = '';
+    document.getElementById('prod-preco').value = '';
+    toast('Produto salvo!', 'success');
+    carregarProdutos();
+  }
+
+  async function deletarProduto(id) {
+    await fetch(`/produtos/${id}`, { method: 'DELETE' });
+    carregarProdutos();
+  }
+
+  // ── Pedido ────────────────────────────────────────────────────────────
+  function adicionarDoCatalogo() {
+    const val = document.getElementById('sel-catalogo').value;
+    if (!val) return;
+    const p = JSON.parse(val);
+    pedidoItens.push({ nome: p.nome, qtd: 1, preco_uni: parseFloat(p.preco) });
+    renderPedido();
+    document.getElementById('sel-catalogo').value = '';
+  }
+
+  function adicionarAvulso() {
+    const nome  = document.getElementById('avulso-nome').value.trim();
+    const qtdv  = document.getElementById('avulso-qtd').value;
+    const preco = parseFloat(document.getElementById('avulso-preco').value);
+    if (!nome || isNaN(preco)) { toast('Preencha nome e preço do item', 'error'); return; }
+    const qtd = qtdv === '' ? null : parseInt(qtdv);
+    pedidoItens.push({ nome, qtd, preco_uni: preco });
+    renderPedido();
+    document.getElementById('avulso-nome').value  = '';
+    document.getElementById('avulso-qtd').value   = '';
+    document.getElementById('avulso-preco').value = '';
+  }
+
+  function removerItem(idx) {
+    pedidoItens.splice(idx, 1);
+    renderPedido();
+  }
+
+  function renderPedido() {
+    const el = document.getElementById('pedido-itens');
+    if (!pedidoItens.length) {
+      el.innerHTML = '<div class="empty-state">Nenhum item adicionado ainda.</div>';
+      document.getElementById('total-itens').textContent = 'R$ 0,00';
+      document.getElementById('label-subtotal').textContent = 'Total do Pedido';
+      document.getElementById('pedido-descontos').innerHTML = '';
+      document.getElementById('bar-total-final').style.display = 'none';
+      return;
+    }
+
+    let subtotal = 0;
+    el.innerHTML = pedidoItens.map((item, idx) => {
+      const sub = item.qtd !== null ? item.qtd * item.preco_uni : item.preco_uni;
+      subtotal += sub;
+      return `
+        <div class="pedido-item">
+          <div class="nome-col">${item.nome}</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:12px;color:var(--muted)">Qtd</span>
+            <input type="number" value="${item.qtd ?? ''}" min="1" placeholder="—"
+              style="width:60px" onchange="updateQtd(${idx}, this.value)" />
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:12px;color:var(--muted)">R$</span>
+            <input type="number" value="${item.preco_uni}" step="0.01" min="0"
+              style="width:80px" onchange="updatePreco(${idx}, this.value)" />
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="subtotal">R$ ${sub.toFixed(2).replace('.', ',')}</span>
+            <button class="btn btn-danger btn-sm" onclick="removerItem(${idx})">✕</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    document.getElementById('total-itens').textContent = 'R$ ' + subtotal.toFixed(2).replace('.', ',');
+    
+    // Renderiza Descontos e Acumula
+    const elDesc = document.getElementById('pedido-descontos');
+    const barFinal = document.getElementById('bar-total-final');
+    let totalFinal = subtotal;
+
+    if (!pedidoDescontos.length) {
+      elDesc.innerHTML = '';
+      barFinal.style.display = 'none';
+      document.getElementById('label-subtotal').textContent = 'Total do Pedido';
+    } else {
+      document.getElementById('label-subtotal').textContent = 'Subtotal';
+      
+      elDesc.innerHTML = pedidoDescontos.map((desc, idx) => {
+        let deduzido = 0;
+        let strValor = '';
+        if (desc.tipo === 'valor') {
+          deduzido = desc.valor;
+          strValor = `- R$ ${desc.valor.toFixed(2).replace('.', ',')}`;
+        } else {
+          deduzido = (totalFinal * desc.valor) / 100; // Cascata
+          strValor = `- ${desc.valor}% (-R$ ${deduzido.toFixed(2).replace('.', ',')})`;
+        }
+        totalFinal -= deduzido;
+        if (totalFinal < 0) totalFinal = 0;
+
+        const label = desc.nome || `Desconto ${idx + 1}`;
+        return `
+          <div class="pedido-item" style="padding: 10px 14px; border-color: rgba(248,113,113,.2); background: rgba(248,113,113,.05);">
+            <div class="nome-col" style="color: var(--red);">🏷️ ${label}</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="subtotal" style="color: var(--red);">${strValor}</span>
+              <button class="btn btn-danger btn-sm" onclick="removerDesconto(${idx})">✕</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      barFinal.style.display = 'flex';
+      document.getElementById('total-final').textContent = 'R$ ' + totalFinal.toFixed(2).replace('.', ',');
+    }
+
+    atualizarLivePreview();
+  }
+
+  // ── Handlers de Desconto ──────────────────────────────────────────────
+  function adicionarDesconto() {
+    const nome = document.getElementById('desc-nome').value.trim();
+    const tipo = document.getElementById('desc-tipo').value;
+    const valor = parseFloat(document.getElementById('desc-valor').value);
+
+    if (isNaN(valor) || valor <= 0) {
+      toast('Digite um valor de desconto maior que zero!', 'error');
+      return;
+    }
+
+    pedidoDescontos.push({ nome: nome, tipo: tipo, valor: valor });
+    document.getElementById('desc-nome').value = '';
+    document.getElementById('desc-valor').value = '';
+    renderPedido();
+  }
+
+  function removerDesconto(idx) {
+    pedidoDescontos.splice(idx, 1);
+    renderPedido();
+  }
+
+  // Hook que gera o preview iterativo
+  let previewTimeout;
+  async function atualizarLivePreview() {
+    clearTimeout(previewTimeout);
+    previewTimeout = setTimeout(async () => {
+      const p = document.getElementById('preview-cupom');
+      if(!p) return;
+      
+      try {
+        if(!pedidoItens.length && !document.getElementById('cpf').value) {
+          p.innerHTML = "O cupom está vazio.\nAdicione ou edite itens para visualizar.";
+          return;
+        }
+        
+        const payload = { 
+          pedido: {
+            cpf: document.getElementById('cpf').value,
+            itens: pedidoItens,
+            descontos: pedidoDescontos
+          }
+        };
+        const res = await fetch('/preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if(data.texto) {
+          p.innerHTML = data.texto;
+        } else {
+          p.innerHTML = "Erro ao carregar preview.";
+        }
+      } catch {
+        p.innerHTML = "Erro de conexão com o painel.";
+      }
+    }, 150); // debounce
+  }
+
+  function updateQtd(idx, val) {
+    pedidoItens[idx].qtd = val === '' ? null : parseInt(val);
+    renderPedido();
+  }
+
+  function updatePreco(idx, val) {
+    pedidoItens[idx].preco_uni = parseFloat(val) || 0;
+    renderPedido();
+  }
+
+  // ── Inteligência Artificial (Fatura) ──────────────────────────────────
+  async function analisarFaturaIA() {
+    const texto = document.getElementById('fatura-texto').value.trim();
+    const arquivoInput = document.getElementById('fatura-arquivo');
+    const btn = document.getElementById('btn-analisar');
+
+    if (!texto && (!arquivoInput.files || arquivoInput.files.length === 0)) {
+      toast('Cole um texto ou envie uma imagem da fatura.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '🤖 Analisando fatura... (Pode demorar uns segundos)';
+
+    try {
+      let payload = { texto: texto };
+      
+      if (arquivoInput.files && arquivoInput.files.length > 0) {
+        const file = arquivoInput.files[0];
+        
+        if (file.type === 'application/pdf') {
+          payload.mime_type = file.type;
+          payload.imagem_base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+        } else {
+          payload.mime_type = "image/jpeg"; // Forçamos JPEG comprimido
+          payload.imagem_base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const img = new Image();
+              img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                const MAX_DIM = 1200; // Limite rápido para a IA
+                
+                if (width > height && width > MAX_DIM) {
+                  height = Math.round(height * (MAX_DIM / width));
+                  width = MAX_DIM;
+                } else if (height > MAX_DIM) {
+                  width = Math.round(width * (MAX_DIM / height));
+                  height = MAX_DIM;
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
+              };
+              img.onerror = reject;
+              img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+        }
+      }
+
+      const res = await fetch('/analisar-fatura', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.itens)) {
+        let adicionados = 0;
+        data.itens.forEach(i => {
+          if (i.nome && i.preco_uni !== undefined && i.preco_uni !== null) {
+             pedidoItens.push({
+               nome: i.nome,
+               qtd: i.qtd || 1,
+               preco_uni: parseFloat(i.preco_uni)
+             });
+             adicionados++;
+          }
+        });
+        renderPedido();
+        toast(`${adicionados} item(ns) importado(s) via IA!`, 'success');
+        document.getElementById('fatura-texto').value = '';
+        arquivoInput.value = '';
+        switchTab('pedido');
+      } else {
+        toast('Erro: ' + (data.erro || 'Falha ao processar o retorno da IA.'), 'error');
+      }
+    } catch (err) {
+      toast('Erro de comunicação com servidor.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Analisar e Importar Compras';
+    }
+  }
+
+  // ── Imprimir ──────────────────────────────────────────────────────────
+  async function imprimir() {
+    if (!impressoraAtual) { toast('Selecione uma impressora primeiro', 'error'); return; }
+    if (!pedidoItens.length) { toast('Adicione pelo menos um item ao pedido', 'error'); return; }
+
+    const rawCpf = document.getElementById('cpf').value.replace(/\D/g, '');
+    if (rawCpf && rawCpf.length !== 11) { toast('O CPF digitado está incompleto', 'error'); return; }
+    const cpfFinal = rawCpf || null;
+
+    const btn = document.getElementById('btn-imprimir');
+    btn.disabled = true;
+    btn.textContent = 'Imprimindo...';
+
+    try {
+      const res = await fetch('/imprimir', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          impressora: impressoraAtual,
+          pedido: { cpf: cpfFinal, itens: pedidoItens, descontos: pedidoDescontos }
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast('Cupom enviado para a impressora! 🎉', 'success');
+        pedidoItens = [];
+        renderPedido();
+      } else {
+        toast('Erro: ' + data.erro, 'error');
+      }
+    } catch {
+      toast('Erro ao conectar com o servidor', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '🖨️ Imprimir Cupom';
+    }
+  }
+
+  // ── Loja ──────────────────────────────────────────────────────────────
+  async function carregarLoja() {
+    const d = await fetch('/loja').then(r => r.json());
+    document.getElementById('loja-nome').value    = d.nome || '';
+    document.getElementById('loja-pix').value     = d.chave_pix || '';
+    document.getElementById('loja-cidade').value  = d.cidade || '';
+    document.getElementById('loja-colunas').value = d.largura_colunas || 30;
+  }
+
+  async function salvarLoja() {
+    const payload = {
+      nome:            document.getElementById('loja-nome').value,
+      chave_pix:       document.getElementById('loja-pix').value,
+      cidade:          document.getElementById('loja-cidade').value,
+      largura_colunas: parseInt(document.getElementById('loja-colunas').value)
+    };
+    await fetch('/loja', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    toast('Configurações salvas!', 'success');
+  }
+
+  // ── Teste de Margem Rápido ──────────────────────────────────────────
+  async function testarLargura(event) {
+    if (!impressoraAtual) { 
+      toast('Conecte a impressora primeiro na Aba "Pedido"!', 'error'); 
+      return; 
+    }
+    
+    const cols = parseInt(document.getElementById('loja-colunas').value) || 30;
+
+    const btn = event.currentTarget;
+    const oldText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Imprimindo...';
+
+    try {
+      const res = await fetch('/testar-largura', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ impressora: impressoraAtual, colunas: cols })
+      });
+      const data = await res.json();
+      if (data.ok) toast('Teste de margem enviado para a impressora!', 'success');
+      else toast('Erro: ' + data.erro, 'error');
+    } catch {
+      toast('Erro de comunicação', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = oldText;
+    }
+  }
+
+  // ── Init ─────────────────────────────────────────────────────────────
+  carregarImpressoras();
+  carregarProdutos();
+  carregarLoja();
+</script>
+</body>
+</html>
