@@ -1,31 +1,37 @@
-import { createClient } from '@/lib/supabase-server';
-import { stripe, PRICES } from '@/lib/stripe';
-import { NextRequest, NextResponse } from 'next/server';
-import { headers } from 'next/headers';
+import { createClient } from "@/lib/supabase-server";
+import { stripe, PRICES } from "@/lib/stripe";
+import { NextRequest, NextResponse } from "next/server";
+import { headers } from "next/headers";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
   const { priceType } = await req.json();
 
-  if (priceType !== 'monthly' && priceType !== 'annual') {
-    return NextResponse.json({ error: 'Tipo de plano inválido' }, { status: 400 });
+  if (priceType !== "monthly" && priceType !== "annual") {
+    return NextResponse.json(
+      { error: "Tipo de plano inválido" },
+      { status: 400 },
+    );
   }
 
   // Buscar loja do usuário
   const { data: loja, error: dbError } = await supabase
-    .from('lojas')
-    .select('id, stripe_customer_id')
-    .eq('user_id', user.id)
+    .from("lojas")
+    .select("id, stripe_customer_id")
+    .eq("user_id", user.id)
     .single();
 
   if (dbError || !loja) {
-    return NextResponse.json({ error: 'Loja não encontrada' }, { status: 404 });
+    return NextResponse.json({ error: "Loja não encontrada" }, { status: 404 });
   }
 
   // Criar ou reutilizar Customer no Stripe
@@ -43,22 +49,22 @@ export async function POST(req: NextRequest) {
 
     // Salvar o customer_id na loja
     await supabase
-      .from('lojas')
+      .from("lojas")
       .update({ stripe_customer_id: customerId })
-      .eq('id', loja.id);
+      .eq("id", loja.id);
   }
 
   // Determinar URL base
   const headersList = await headers();
-  const host = headersList.get('host');
-  const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
+  const host = headersList.get("host");
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
   const baseUrl = `${protocol}://${host}`;
 
   // Criar Checkout Session
-  const priceId = priceType === 'monthly' ? PRICES.monthly : PRICES.annual;
+  const priceId = priceType === "monthly" ? PRICES.monthly : PRICES.annual;
 
   const session = await stripe.checkout.sessions.create({
-    mode: 'subscription',
+    mode: "subscription",
     customer: customerId,
     line_items: [
       {
