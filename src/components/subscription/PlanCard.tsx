@@ -30,9 +30,9 @@ export function PlanCard({
   return (
     <div
       className={`
-        relative flex flex-col p-10 rounded-3xl border transition-all duration-500 overflow-hidden group
+        relative flex flex-col p-6 sm:p-10 rounded-3xl border transition-all duration-500 overflow-hidden group
         ${highlighted
-          ? 'bg-primary/[0.03] border-primary/30 shadow-[0_20px_60px_-15px_rgba(59,130,246,0.15)] ring-1 ring-primary/20 scale-[1.02]'
+          ? 'bg-primary/[0.03] border-primary/30 shadow-[0_20px_60px_-15px_rgba(59,130,246,0.15)] ring-1 ring-primary/20 md:scale-[1.02]'
           : 'glass-panel border-white/[0.05] hover:border-white/10'
         }
       `}

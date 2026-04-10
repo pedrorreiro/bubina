@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useApp } from "@/context/AppContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -29,7 +29,22 @@ export function Header() {
   } = useApp();
   const [showStatusDetail, setShowStatusDetail] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+      if (statusMenuRef.current && !statusMenuRef.current.contains(event.target as Node)) {
+        setShowStatusDetail(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -75,7 +90,7 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed top-4 left-4 right-4 h-16 z-[1000] flex items-center px-6 glass-panel md:px-8 max-w-7xl mx-auto shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+      <header className="fixed top-0 left-0 right-0 h-16 z-[1000] flex items-center px-4 md:px-8 glass-panel !rounded-t-none !border-x-0 !border-t-0 md:!rounded-2xl md:!border md:top-4 md:left-4 md:right-4 max-w-7xl mx-auto shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
         <div className="flex items-center justify-between w-full">
           {/* Left: Brand */}
           <div className="flex items-center gap-4">
@@ -143,7 +158,7 @@ export function Header() {
           <div className="flex items-center gap-3">
             {/* User Dropdown */}
             {userEmail && (
-              <div className="relative">
+              <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => {
                     setShowUserMenu(!showUserMenu);
@@ -160,7 +175,7 @@ export function Header() {
                       initial={{ opacity: 0, y: 5, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 5, scale: 0.95 }}
-                      className="absolute top-[calc(100%+12px)] right-0 min-w-[220px] glass-panel p-2 z-[1100] shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+                      className="absolute top-[calc(100%+12px)] right-0 min-w-[220px] bg-[#1a1d24]/95 border border-white/10 p-2 z-[1100] shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl rounded-2xl"
                     >
                       <div className="p-4 border-b border-white/[0.05] mb-2">
                         <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-text-dim mb-1.5">
@@ -186,7 +201,7 @@ export function Header() {
             )}
 
             {/* Printer Status */}
-            <div className="relative">
+            <div className="relative" ref={statusMenuRef}>
               <div
                 className="status-pill h-10 px-4 sm:px-5 cursor-pointer hover:shadow-[0_0_15px_rgba(255,255,255,0.05)] active:scale-95 transition-all"
                 onClick={() => {
@@ -211,7 +226,7 @@ export function Header() {
                     initial={{ opacity: 0, y: 5, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 5, scale: 0.95 }}
-                    className="absolute top-[calc(100%+12px)] right-0 min-w-[280px] glass-panel p-5 z-[1100] shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+                    className="absolute top-[calc(100%+12px)] right-0 min-w-[280px] bg-[#1a1d24]/95 border border-white/10 p-5 z-[1100] shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl rounded-2xl"
                   >
                     <div className="flex justify-between items-center mb-6 px-1">
                       <span className="text-[10px] font-bold text-text-dim uppercase tracking-[0.15em]">
@@ -275,8 +290,8 @@ export function Header() {
         </div>
       </header>
 
-      {/* Mobile Bottom Navigation - Floating Pill Style */}
-      <nav className="fixed bottom-6 left-4 right-4 h-16 glass-panel z-[1000] flex justify-around items-center px-4 md:hidden shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+      {/* Mobile Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 h-16 glass-panel !rounded-b-none !rounded-t-2xl !border-x-0 !border-b-0 border-white/5 bg-[#0a0a0b]/95 z-[1000] flex justify-around items-center px-4 md:hidden shadow-[0_-15px_40px_rgba(0,0,0,0.6)]">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive =

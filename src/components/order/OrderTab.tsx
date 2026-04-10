@@ -43,6 +43,9 @@ interface OrderTabProps {}
 
 // ── Sortable Item Component ──────────────────────────────────────────────────
 
+// Define numeric input fix handler
+const selectOnFocus = (e: React.FocusEvent<HTMLInputElement>) => e.target.select();
+
 interface SortableItemProps {
   id: string;
   item: ItemPedido;
@@ -81,64 +84,76 @@ function SortableItem({
       ref={setNodeRef}
       style={style}
       className={`
-        flex items-center gap-2 p-3 rounded-2xl transition-all duration-300 group
+        flex gap-3 p-4 rounded-2xl transition-all duration-300 group
         ${
           isDragging
             ? "z-[1001] bg-surface-raised border border-primary/40 shadow-2xl opacity-90 scale-[1.03] ring-1 ring-primary/20"
-            : "bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.05] hover:border-white/[0.08]"
+            : "bg-white/[0.02] border border-white/[0.03] hover:bg-white/[0.05] hover:border-white/[0.08]"
         }
       `}
     >
+      {/* Column 1: Grip Handle */}
       <div
-        className="cursor-grab active:cursor-grabbing p-1.5 text-text-dim group-hover:text-primary transition-colors bg-white/5 rounded-lg"
+        className="cursor-grab active:cursor-grabbing p-1.5 text-text-dim/60 hover:text-primary transition-colors h-fit mt-0.5 rounded-lg shrink-0"
         {...attributes}
         {...listeners}
       >
-        <GripVertical size={14} />
+        <GripVertical size={16} />
       </div>
 
-      <div className="flex-1 min-w-0 pr-2">
-        <div className="text-sm font-bold text-white truncate group-hover:text-primary transition-colors">
-          {item.nome}
-        </div>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          <span className="text-[10px] font-bold text-white/40 tabular-nums">
+      {/* Column 2: Content */}
+      <div className="flex-1 min-w-0 flex flex-col gap-3">
+        {/* Top: Name & Total */}
+        <div className="flex justify-between items-start gap-3">
+          <div className="text-[13px] font-bold text-white/90 leading-tight pr-2">
+            {item.nome}
+          </div>
+          <div className="text-[14px] font-black text-primary tabular-nums tracking-tight shrink-0">
             R$ {sub.toFixed(2).replace(".", ",")}
-          </span>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <div className="flex flex-col gap-0.5 items-center">
-          <span className="text-[8px] font-black text-text-dim uppercase tracking-tighter">
-            Qtd
-          </span>
-          <input
-            className="w-12 h-9 bg-black/40 border border-white/5 rounded-xl text-center text-xs font-bold text-white focus:border-primary/50 outline-none transition-all"
-            type="number"
-            value={item.qtd ?? ""}
-            onChange={(e) => onUpdateQtd(idx, e.target.value)}
-          />
+          </div>
         </div>
 
-        <div className="flex flex-col gap-0.5 items-center">
-          <span className="text-[8px] font-black text-text-dim uppercase tracking-tighter">
-            Unit.
-          </span>
-          <input
-            className="w-16 h-9 bg-black/40 border border-white/5 rounded-xl text-center text-xs font-bold text-white focus:border-primary/50 outline-none transition-all"
-            type="number"
-            value={item.preco_uni}
-            onChange={(e) => onUpdatePreco(idx, e.target.value)}
-          />
-        </div>
+        {/* Bottom: Underlined Controls */}
+        <div className="flex items-end justify-between">
+          <div className="flex items-end gap-5">
+            {/* Qtd */}
+            <div className="flex items-center">
+              <span className="text-[8px] font-bold text-text-dim/60 uppercase tracking-widest mr-2 mb-0.5">
+                Qtd
+              </span>
+              <input
+                className="w-10 h-7 bg-transparent border-b border-white/10 hover:border-white/30 focus:border-primary text-center text-xs font-bold text-white outline-none transition-colors"
+                type="number"
+                value={item.qtd === 0 || item.qtd === null ? "" : item.qtd}
+                onChange={(e) => onUpdateQtd(idx, e.target.value)}
+                onFocus={selectOnFocus}
+                placeholder="0"
+              />
+            </div>
 
-        <button
-          className="p-2 text-text-dim hover:text-red hover:bg-red/10 rounded-lg transition-all"
-          onClick={() => onRemove(idx)}
-        >
-          <X size={16} />
-        </button>
+            {/* V. Unit */}
+            <div className="flex items-center">
+              <span className="text-[8px] font-bold text-text-dim/60 uppercase tracking-widest mr-2 mb-0.5">
+                R$
+              </span>
+              <input
+                className="w-14 h-7 bg-transparent border-b border-white/10 hover:border-white/30 focus:border-primary text-center text-xs font-bold text-white outline-none transition-colors"
+                type="number"
+                value={item.preco_uni === 0 ? "" : item.preco_uni}
+                onChange={(e) => onUpdatePreco(idx, e.target.value)}
+                onFocus={selectOnFocus}
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+
+          <button
+            className="w-7 h-7 flex items-center justify-center text-text-dim/30 hover:text-red hover:bg-red/10 rounded ml-2 transition-all"
+            onClick={() => onRemove(idx)}
+          >
+            <X size={15} />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -310,9 +325,9 @@ export function OrderTab({}: OrderTabProps) {
   const total = calcTotal();
 
   return (
-    <div className="flex flex-col h-full max-h-[calc(100vh-120px)] overflow-hidden lg:pt-4">
+    <div className="flex flex-col h-full lg:max-h-[calc(100vh-120px)] lg:overflow-hidden lg:pt-4">
       {/* Mobile View Switcher */}
-      <div className="flex lg:hidden p-1 bg-white/5 rounded-2xl border border-white/10 mb-6 gap-1 shadow-2xl">
+      <div className="flex lg:hidden p-1 mt-4 bg-white/5 rounded-2xl border border-white/10 mb-6 gap-1 shadow-2xl">
         <button
           onClick={() => setMobileView("venda")}
           className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-500 font-bold text-xs uppercase tracking-widest ${
@@ -352,10 +367,10 @@ export function OrderTab({}: OrderTabProps) {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-8 items-start pb-24 lg:pb-0 flex-1 overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-8 items-start pb-8 lg:pb-0 flex-1 overflow-hidden">
         {/* ── LEFT COLUMN: THE ACTIVE TICKET (BILL) ──────────────────────── */}
         <div
-          className={`flex flex-col h-full glass-panel overflow-hidden border-white/[0.08] shadow-[0_30px_90px_rgba(0,0,0,0.6)] ${
+          className={`flex flex-col lg:h-full glass-panel lg:overflow-hidden border-white/[0.08] shadow-[0_30px_90px_rgba(0,0,0,0.6)] ${
             mobileView !== "venda" ? "hidden lg:flex" : "flex"
           }`}
         >
@@ -407,7 +422,7 @@ export function OrderTab({}: OrderTabProps) {
           {/* Ticket Body: Items List (Scrollable) */}
           <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar min-h-0 bg-black/10">
             {itens.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
+              <div className="flex flex-col items-center justify-center py-12 lg:py-20 text-center opacity-40">
                 <ShoppingCart size={40} className="mb-4" />
                 <p className="text-sm font-semibold uppercase tracking-widest text-text-dim">
                   Ticket Vazio
@@ -449,7 +464,7 @@ export function OrderTab({}: OrderTabProps) {
                           setItens((p) =>
                             p.map((it, x) =>
                               x === i
-                                ? { ...it, preco_uni: parseFloat(v) || 0 }
+                                ? { ...it, preco_uni: v === "" ? 0 : parseFloat(v) }
                                 : it,
                             ),
                           )
@@ -576,7 +591,7 @@ export function OrderTab({}: OrderTabProps) {
 
         {/* ── RIGHT COLUMN: THE COMMAND DECK (CATALOG & ENTRY) ───────────────── */}
         <div
-          className={`space-y-8 flex flex-col h-full overflow-hidden ${
+          className={`space-y-8 flex flex-col lg:h-full lg:overflow-hidden ${
             mobileView !== "cardapio" ? "hidden lg:flex" : "flex"
           }`}
         >
@@ -598,37 +613,42 @@ export function OrderTab({}: OrderTabProps) {
             <div className="hidden lg:block w-[1px] h-10 bg-white/10" />
 
             {/* Row 2: Qtd, Price & Add Button (Grouped on mobile) */}
-            <div className="flex items-center gap-2 p-1 lg:p-0">
-              <div className="relative flex-1 lg:w-16 flex items-center overflow-hidden rounded-xl bg-black/20 lg:bg-transparent border border-white/5 lg:border-none">
+            <div className="flex items-stretch gap-2 p-1 lg:p-0">
+              {/* Qtd Input Group */}
+              <div className="flex-1 lg:w-20 flex items-center bg-black/20 lg:bg-white/5 lg:border-white/10 overflow-hidden rounded-xl border border-white/5 focus-within:border-primary/50 focus-within:bg-black/40 transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.1)]">
+                <span className="text-[9px] font-bold text-text-dim/60 uppercase tracking-widest px-3 h-full flex items-center border-r border-white/5 bg-white/[0.02]">
+                  Qtd
+                </span>
                 <input
                   className="w-full bg-transparent border-none py-4 text-sm font-bold text-white text-center outline-none placeholder:text-text-dim/40"
                   type="number"
-                  placeholder="Qtd"
+                  placeholder="1"
                   value={avQtd}
                   onChange={(e) => setAvQtd(e.target.value)}
                   onKeyDown={handleKeyDown}
+                  onFocus={selectOnFocus}
                 />
               </div>
 
-              <div className="hidden lg:block w-[1px] h-10 bg-white/10" />
-
-              <div className="relative flex-[2] lg:w-28 flex items-center overflow-hidden rounded-xl bg-black/20 lg:bg-transparent border border-white/5 lg:border-none">
-                <span className="absolute left-4 text-[10px] font-bold text-primary/60">
+              {/* Price Input Group */}
+              <div className="flex-[1.5] lg:w-32 flex items-center bg-black/20 lg:bg-white/5 lg:border-white/10 overflow-hidden rounded-xl border border-white/5 focus-within:border-primary/50 focus-within:bg-black/40 transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.1)]">
+                <span className="text-[9px] font-bold text-text-dim/60 uppercase tracking-widest px-3 h-full flex items-center border-r border-white/5 bg-white/[0.02]">
                   R$
                 </span>
                 <input
-                  className="w-full bg-transparent border-none py-4 pl-10 pr-4 text-sm font-bold text-white text-right outline-none placeholder:text-text-dim/40"
+                  className="w-full bg-transparent border-none py-4 px-2 text-sm font-bold text-white text-right outline-none placeholder:text-text-dim/40"
                   type="number"
                   placeholder="0,00"
                   value={avPreco}
                   onChange={(e) => setAvPreco(e.target.value)}
                   onKeyDown={handleKeyDown}
+                  onFocus={selectOnFocus}
                   step="0.01"
                 />
               </div>
 
               <button
-                className="w-14 h-14 lg:w-14 lg:h-14 bg-primary text-white flex items-center justify-center rounded-xl hover:bg-primary-hover shadow-lg active:scale-95 transition-all shrink-0"
+                className="w-14 lg:w-14 bg-primary text-white flex items-center justify-center rounded-xl hover:bg-primary-hover shadow-lg active:scale-95 transition-all shrink-0"
                 onClick={addManual}
               >
                 <Plus size={24} />
@@ -703,7 +723,7 @@ export function OrderTab({}: OrderTabProps) {
             </div>
 
             {/* Catalog Selection Grid */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar pr-3 -mr-3 relative">
+            <div className="flex-1 lg:overflow-y-auto custom-scrollbar pr-3 -mr-3 relative">
               <div className="flex items-center gap-4 mb-6">
                 <span className="px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-[10px] font-bold text-primary uppercase tracking-[0.25em]">
                   Sua Vitrine
