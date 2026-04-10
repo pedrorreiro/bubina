@@ -1,6 +1,6 @@
 import { stripe } from "@/lib/stripe";
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase-server";
+import { createAdminClient } from "@/lib/supabase-server";
 import { SubscriptionService } from "@/services/subscription";
 import Stripe from "stripe";
 
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   try {
     await SubscriptionService.processWebhookEvent(supabase, event);
