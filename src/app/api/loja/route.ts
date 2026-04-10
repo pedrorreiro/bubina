@@ -42,13 +42,14 @@ export async function POST(req: NextRequest) {
   // Buscar registro atual para comparar a logo e preservar o trial
   const { data: currentLoja } = await supabase
     .from("lojas")
-    .select("logo_raw, trial_ends_at")
+    .select("logo_raw, trial_ends_at, mensagem_rodape")
     .eq("user_id", user.id)
     .maybeSingle();
 
   // Verificar se está tentando mudar a logo ou o rodapé
   const isChangingLogo = loja.logo_raw !== currentLoja?.logo_raw;
-  const isChangingRodape = loja.mensagem_rodape !== currentLoja?.mensagem_rodape;
+  const isChangingRodape =
+    loja.mensagem_rodape !== currentLoja?.mensagem_rodape;
 
   if (isChangingLogo || isChangingRodape) {
     const subscription = await getSubscription(supabase, user.id);
