@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase-server";
 import { NextResponse } from "next/server";
-import { getSubscription } from "../subscription/subscription-logic";
+import { SubscriptionService } from "@/services/subscription";
 
 export async function GET() {
   const supabase = await createClient();
@@ -13,8 +13,8 @@ export async function GET() {
     );
   }
 
-  // Obter status da assinatura via função unificada (Única Query)
-  const subscription = await getSubscription(supabase, user.id);
+  // Obter status da assinatura via Serviço Centralizado
+  const subscription = await SubscriptionService.getSubscriptionStatus(supabase, user.id);
 
   return NextResponse.json({
     authenticated: true,
