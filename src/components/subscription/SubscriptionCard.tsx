@@ -92,6 +92,15 @@ export function SubscriptionCard() {
     return hours >= 1 ? `${hours}h ${minutes}m` : `${minutes}m`;
   };
 
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return "";
+    return new Intl.DateTimeFormat("pt-BR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }).format(new Date(dateStr));
+  };
+
   const statusConfig = getStatusConfig(sub, trialDaysRemaining);
 
   return (
@@ -125,7 +134,7 @@ export function SubscriptionCard() {
             >
               <statusConfig.icon size={20} />
             </div>
-            <div>
+            <div className="flex-1">
               <p
                 className={`text-sm font-bold tracking-tight ${statusConfig.textClass}`}
               >
@@ -134,6 +143,15 @@ export function SubscriptionCard() {
               <p className="text-xs text-text-dim font-medium mt-0.5">
                 {statusConfig.description}
               </p>
+              
+              {/* Data de Validade */}
+              {(sub.currentPeriodEnd || (sub.reason === 'trial' && sub.trialEndsAt)) && (
+                <div className="mt-2 flex items-center gap-1.5 py-1 px-2.5 bg-black/20 rounded-lg w-fit border border-white/5">
+                  <span className="text-[10px] font-bold text-white/60 tracking-tight">
+                    Vence em: {formatDate(sub.currentPeriodEnd || sub.trialEndsAt)}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

@@ -51,6 +51,7 @@ export interface SubscriptionStatus {
   active: boolean;
   reason: "trial" | "paid" | "expired" | "no_store" | "manual";
   trialEndsAt: string | null;
+  currentPeriodEnd: string | null;
   subscriptionStatus: string | null;
   isCanceling: boolean;
 }
