@@ -43,7 +43,7 @@ export function useSubscription() {
     refreshSubscription();
   }, [refreshSubscription]);
 
-  /** Cria uma sessão de checkout no Stripe e redireciona */
+  /** Cria uma sessão de checkout no Stripe e retorna a URL */
   const createCheckout = async (priceType: "monthly" | "annual") => {
     const res = await fetch("/api/stripe/checkout", {
       method: "POST",
@@ -53,10 +53,10 @@ export function useSubscription() {
 
     const { url, error } = await res.json();
     if (error) throw new Error(error);
-    if (url) window.location.href = url;
+    return { url };
   };
 
-  /** Abre o Stripe Customer Portal para gerenciar a assinatura */
+  /** Cria uma sessão do Stripe Customer Portal e retorna a URL */
   const openPortal = async () => {
     const res = await fetch("/api/stripe/portal", {
       method: "POST",
@@ -64,7 +64,7 @@ export function useSubscription() {
 
     const { url, error } = await res.json();
     if (error) throw new Error(error);
-    if (url) window.location.href = url;
+    return { url };
   };
 
   /** Solicita o cancelamento da assinatura ao final do período */

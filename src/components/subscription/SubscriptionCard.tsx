@@ -35,9 +35,8 @@ export function SubscriptionCard() {
   const handleOpenPortal = async () => {
     setPortalLoading(true);
     try {
-      const data = await openPortal();
-      // @ts-ignore
-      window.open(data.url, "_blank");
+      const { url } = await openPortal();
+      if (url) window.open(url, "_blank");
     } catch (e) {
       toast.error("Erro ao abrir o portal de assinatura");
     }
