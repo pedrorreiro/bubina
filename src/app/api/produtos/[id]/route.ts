@@ -1,0 +1,26 @@
+import { createClient } from '@/lib/supabase-server';
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+  }
+
+  const { error } = await supabase
+    .from('produtos')
+    .delete()
+    .eq('id', params.id)
+    .eq('user_id', user.id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}

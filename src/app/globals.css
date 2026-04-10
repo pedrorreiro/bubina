@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  --color-primary-glow: rgba(59, 130, 246, 0.15);
+  
+  --color-bg: #050608;
+  --color-surface: #0e1116;
+  --color-surface-raised: #161921;
+  
+  --color-text: #f8fafc;
+  --color-text-muted: #94a3b8;
+  --color-text-dim: #64748b;
+  
+  --color-green: #10b981;
+  --color-red: #f43f5e;
+  --color-yellow: #f59e0b;
+  --color-border: rgba(255, 255, 255, 0.06);
+
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --font-sans: var(--font-pjs), 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+}
+
+@layer base {
+  *, ::before, ::after {
+    font-family: var(--font-pjs), 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-bg text-text antialiased;
+    min-height: 100vh;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+  }
+
+  button, input, optgroup, select, textarea {
+    font-family: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    font-size: 100%;
+    font-weight: inherit;
+    line-height: inherit;
+    color: inherit;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Simple Scrollbar */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-white/5;
+    border-radius: 10px;
+    &:hover { @apply bg-white/10; }
+  }
+}
+
+@layer components {
+  .solid-card {
+    @apply bg-surface border border-white/[0.05] rounded-xl p-6 md:p-8 transition-all duration-300;
+    box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
+  }
+
+  .glass-panel {
+    @apply bg-surface/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 
+           hover:bg-primary-hover hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] 
+           active:scale-[0.97] disabled:opacity-40 disabled:grayscale 
+           text-[12px] tracking-wide relative overflow-hidden;
+  }
+
+  .status-pill {
+    @apply flex items-center gap-3 px-4 py-2 rounded-full bg-white/[0.03] border border-white/5 
+           text-[11px] font-medium tracking-wide cursor-pointer transition-all duration-300;
+    &:hover { @apply bg-white/[0.06] border-white/10; }
+    &.connected { @apply text-green border-green/20 bg-green/5; }
+    &.disconnected { @apply text-red border-red/20 bg-red/5; }
+    &.connecting { @apply text-yellow border-yellow/20 bg-yellow/5; }
+  }
+
+  /* Receipt Paper Style - Solid Minimalist */
+  .receipt-container {
+    background: #fff;
+    color: #111;
+    padding: 32px 16px;
+    width: fit-content;
+    margin: 0 auto;
+    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.8);
+    position: relative;
+    font-family: var(--font-jbm), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+    font-size: 13px;
+    line-height: 1.4;
+    @apply border border-black/10 flex flex-col items-center;
+  }
+
+  .receipt-container::after {
+    content: '';
+    position: absolute;
+    bottom: -10px; left: 0; right: 0;
+    height: 10px;
+    background: linear-gradient(135deg, transparent 33.33%, #fff 33.33%, #fff 66.66%, transparent 66.66%);
+    background-size: 16px 8px;
+  }
+
+  .receipt-text {
+    white-space: pre;
+    font-family: var(--font-jbm), monospace !important;
+    @apply text-[12px] leading-tight;
+  }
+}
+
+@layer utilities {
+  .noscrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .noscrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
