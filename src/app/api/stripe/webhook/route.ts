@@ -35,9 +35,36 @@ export async function POST(req: NextRequest) {
       const session = event.data.object as Stripe.Checkout.Session;
       const subscriptionId = session.subscription as string;
       const customerId = session.customer as string;
+      const lojaId = session.metadata?.loja_id;
 
-      if (subscriptionId) {
-        // Buscar loja pelo customer_id
+      console.log(`✅ [Webhook] Checkout concluído. Loja: ${lojaId}, Sub: ${subscriptionId}`);
+
+      if (lojaId) {
+        // Buscar detalhes da assinatura para pegar a data de expiração (current_period_end)
+        let periodEnd = null;
+        if (subscriptionId) {
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any;
+          periodEnd = new Date(subscription.current_period_end * 1000).toISOString();
+        }
+
+        // Método Recomendado: Usar o ID da loja que enviamos no checkout
+        const { error } = await supabase
+          .from('lojas')
+          .update({
+            stripe_subscription_id: subscriptionId,
+            stripe_customer_id: customerId, // Garante que esteja sincronizado
+            subscription_status: 'active',
+            current_period_end: periodEnd,
+            is_canceling: false
+          })
+          .eq('id', lojaId);
+
+        if (error) {
+          console.error(`❌ [Webhook] Erro ao atualizar loja por ID (${lojaId}):`, error.message);
+        }
+      } else if (customerId) {
+        // Fallback: Buscar pelo customer_id caso o metadata falhe
+        console.warn('⚠️ [Webhook] Metadata loja_id ausente. Usando fallback por customer_id.');
         const { error } = await supabase
           .from('lojas')
           .update({
@@ -47,26 +74,30 @@ export async function POST(req: NextRequest) {
           .eq('stripe_customer_id', customerId);
 
         if (error) {
-          console.error('Erro ao atualizar loja após checkout:', error.message);
+          console.error('❌ [Webhook] Erro no fallback por customer_id:', error.message);
         }
       }
       break;
     }
 
     case 'customer.subscription.updated': {
-      const subscription = event.data.object as Stripe.Subscription;
+      const subscription = event.data.object as any;
       const customerId = subscription.customer as string;
+      const periodEnd = new Date(subscription.current_period_end * 1000).toISOString();
+      const isCanceling = subscription.cancel_at_period_end;
 
       const { error } = await supabase
         .from('lojas')
         .update({
           subscription_status: subscription.status,
           stripe_subscription_id: subscription.id,
+          current_period_end: periodEnd,
+          is_canceling: isCanceling
         })
         .eq('stripe_customer_id', customerId);
 
       if (error) {
-        console.error('Erro ao atualizar status da assinatura:', error.message);
+        console.error('❌ [Webhook] Erro ao atualizar status da assinatura:', error.message);
       }
       break;
     }
@@ -80,11 +111,13 @@ export async function POST(req: NextRequest) {
         .update({
           subscription_status: 'canceled',
           stripe_subscription_id: null,
+          current_period_end: null,
+          is_canceling: false
         })
         .eq('stripe_customer_id', customerId);
 
       if (error) {
-        console.error('Erro ao cancelar assinatura:', error.message);
+        console.error('❌ [Webhook] Erro ao cancelar assinatura:', error.message);
       }
       break;
     }

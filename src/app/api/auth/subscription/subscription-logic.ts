@@ -38,12 +38,18 @@ function calculateSubscriptionStatus(loja: any): any {
     };
   }
 
+  const periodEnd = loja.current_period_end ? new Date(loja.current_period_end) : null;
   const isPaid = loja.subscription_status === 'active' || loja.subscription_status === 'past_due';
-  if (isPaid) {
+  
+  // VERIFICAÇÃO RÍGIDA DE TEMPO: Só está ativo se o status for pago E a data de expiração não passou
+  const isSubscriptionValid = isPaid && (periodEnd ? periodEnd > now : true);
+
+  if (isSubscriptionValid) {
     return {
       active: true,
       reason: 'paid',
       trialEndsAt: loja.trial_ends_at,
+      currentPeriodEnd: loja.current_period_end,
       subscriptionStatus: loja.subscription_status,
       isCanceling
     };
@@ -53,6 +59,7 @@ function calculateSubscriptionStatus(loja: any): any {
     active: false,
     reason: 'expired',
     trialEndsAt: loja.trial_ends_at,
+    currentPeriodEnd: loja.current_period_end,
     subscriptionStatus: loja.subscription_status,
     isCanceling
   };
@@ -66,7 +73,7 @@ export async function getSubscription(supabase: any, userId: string): Promise<an
     console.log(`📡 [Logic] Iniciando query para user: ${userId}`);
     const { data: loja, error: dbError } = await supabase
       .from('lojas')
-      .select('trial_ends_at, subscription_status, is_premium, is_canceling')
+      .select('trial_ends_at, subscription_status, is_premium, is_canceling, current_period_end')
       .eq('user_id', userId)
       .maybeSingle();
 
