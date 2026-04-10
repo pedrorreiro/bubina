@@ -1,12 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-
-export interface SubscriptionStatus {
-  active: boolean;
-  reason: "trial" | "paid" | "expired" | "no_store" | "manual";
-  trialEndsAt: string | null;
-  subscriptionStatus: string | null;
-  isCanceling: boolean;
-}
+import { SubscriptionStatus } from "@/types";
 
 /**
  * Hook para gerenciar operações e estado de assinatura Stripe.

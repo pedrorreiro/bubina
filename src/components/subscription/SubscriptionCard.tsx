@@ -1,7 +1,6 @@
-"use client";
-
 import { useState, useEffect } from "react";
-import { useSubscription, SubscriptionStatus } from "@/hooks/useSubscription";
+import { useSubscription } from "@/hooks/useSubscription";
+import { SubscriptionStatus } from "@/types";
 import { toast } from "sonner";
 import {
   CreditCard,

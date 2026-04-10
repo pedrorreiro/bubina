@@ -12,6 +12,7 @@ import type {
   Produto,
   ItemPedido,
   HistoricoPedido,
+  SubscriptionStatus,
 } from "../types";
 import { BluetoothPrinter } from "../services/bluetooth";
 import { renderizarCupom } from "../services/cupom";
@@ -58,9 +59,10 @@ interface AppState {
   pedidoReaberto: HistoricoPedido | null;
   setPedidoReaberto: (p: HistoricoPedido | null) => void;
   
-  // Auth & User
+  // Auth, User & Subscription
   userEmail: string | null;
   setIsAuthenticated: (b: boolean) => void;
+  subscription: SubscriptionStatus | null;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -69,6 +71,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const [hasLoja, setHasLoja] = useState(false);
   
   const [printer, setPrinter] = useState<BluetoothPrinter | null>(null);
@@ -94,6 +97,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (data.loja) {
           setLojaState(data.loja);
           setHasLoja(true);
+        }
+        if (data.subscription) {
+          setSubscription(data.subscription);
         }
       })
       .finally(() => setIsLoading(false));
@@ -147,9 +153,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // 2. Se salvou com sucesso, procede com a impressão física
     const lojaParaRender = { ...loja };
-    if (loja.logo_raw) {
+    
+    // SÓ ADICIONA A LOGO SE TIVER ASSINATURA ATIVA
+    if (loja.logo_raw && subscription?.active) {
       lojaParaRender.logo = processLogo(loja.logo_raw, loja.logo_metodo || "dither");
+    } else {
+      // Garante que não tenha logo se não for premium
+      delete lojaParaRender.logo;
     }
+
     renderizarCupom(printer, pedido, lojaParaRender);
     await printer.flush();
 
@@ -207,7 +219,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         pedidoReaberto,
         setPedidoReaberto,
         userEmail,
-        setIsAuthenticated
+        setIsAuthenticated,
+        subscription
       }}
     >
       {children}

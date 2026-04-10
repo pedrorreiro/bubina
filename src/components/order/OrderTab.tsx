@@ -234,7 +234,7 @@ export function OrderTab({}: OrderTabProps) {
     total: calcTotal(),
   });
 
-  const preview = gerarPreview(buildPedido(), loja);
+  const preview = gerarPreview(buildPedido(), loja, isPremium);
 
   const addFromCatalog = (p: Produto) => {
     setItens((prev) => [

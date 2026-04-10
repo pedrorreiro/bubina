@@ -214,13 +214,17 @@ export function renderizarCupom(
 // ── Public helpers ────────────────────────────────────────────────────────────
 
 /** Returns a live-preview text string without printing. */
-export function gerarPreview(pedido: Pedido, loja: Loja): string {
+export function gerarPreview(pedido: Pedido, loja: Loja, isPremium = false): string {
   const mock = new MockPrinter(loja.largura_colunas);
   
   // Create a temporary loja object with the processed logo for rendering
   const lojaParaRender = { ...loja };
-  if (loja.logo_raw) {
+  
+  // SÓ PROCESSA A LOGO PARA O PREVIEW SE FOR PREMIUM
+  if (loja.logo_raw && isPremium) {
     lojaParaRender.logo = processLogo(loja.logo_raw, loja.logo_metodo || 'dither');
+  } else {
+    delete lojaParaRender.logo;
   }
 
   renderizarCupom(mock, pedido, lojaParaRender);

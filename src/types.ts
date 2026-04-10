@@ -47,6 +47,14 @@ export interface Loja {
   logo_metodo?: "threshold" | "dither";
 }
 
+export interface SubscriptionStatus {
+  active: boolean;
+  reason: "trial" | "paid" | "expired" | "no_store" | "manual";
+  trialEndsAt: string | null;
+  subscriptionStatus: string | null;
+  isCanceling: boolean;
+}
+
 export const DEFAULT_LOJA: Loja = {
   nome: "ESTABELECIMENTO",
   telefone: "",
