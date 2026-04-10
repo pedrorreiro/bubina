@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useApp } from "@/context/AppContext";
-import { useToast } from "@/context/ToastContext";
+import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -27,7 +27,6 @@ export function Header() {
     disconnectPrinter,
     userEmail
   } = useApp();
-  const { toast } = useToast();
   const [showStatusDetail, setShowStatusDetail] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const pathname = usePathname();
@@ -35,15 +34,15 @@ export function Header() {
   const handleLogout = async () => {
     try {
       const res = await fetch('/api/auth/logout', { method: 'POST' });
-      if (res.ok) {
+      if (res.status === 200) {
         setShowUserMenu(false);
         // O Middleware ou o AppContext redirecionarão após o reload ou mudança de estado
-        window.location.href = "/login";
+        window.location.href = "/";
       } else {
-        toast("Erro ao sair", "error");
+        toast.error("Erro ao sair");
       }
     } catch (e) {
-      toast("Erro de conexão ao sair", "error");
+      toast.error("Erro de conexão ao sair");
     }
   };
 
@@ -53,12 +52,16 @@ export function Header() {
 
   const handleConnect = async (device?: BluetoothDevice) => {
     try {
-      await connectPrinter(device);
-      toast("Impressora conectada!", "success");
+      await connectPrinter(device).then(() => {
+        toast.success("Impressora conectada!");
+      }).catch(e => {
+        const msg = e instanceof Error ? e.message : String(e);
+        toast.error(`Falha: ${msg}`);
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (!msg.includes("User cancelled")) {
-        toast(`Falha: ${msg}`, "error");
+        toast.error(`Falha: ${msg}`);
       }
     }
   };

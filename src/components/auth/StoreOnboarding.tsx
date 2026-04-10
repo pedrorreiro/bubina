@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Store, Phone, ArrowRight, Printer } from 'lucide-react';
+import { maskPhone } from '@/lib/utils';
 
 export function StoreOnboarding() {
   const { setLoja, loja } = useApp();
@@ -103,7 +104,7 @@ export function StoreOnboarding() {
                   required
                   className="w-full bg-black/40 border border-white/5 rounded-2xl pl-12 pr-5 py-4 text-sm font-bold text-white focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-text-dim/20 tabular-nums" 
                   value={telefone}
-                  onChange={e => setTelefone(e.target.value)}
+                  onChange={e => setTelefone(maskPhone(e.target.value))}
                   placeholder="(00) 12345-6789"
                 />
               </div>

@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { ToastProvider } from "../context/ToastContext";
+import { Toaster } from "sonner";
 import { AppProvider } from "../context/AppContext";
 
 const pjs = Plus_Jakarta_Sans({
@@ -27,6 +27,7 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
+
 export default function RootLayout({
   children,
 }: {
@@ -37,9 +38,8 @@ export default function RootLayout({
       <body
         className={`${pjs.variable} ${jbm.variable} font-sans antialiased bg-bg text-text`}
       >
-        <ToastProvider>
-          <AppProvider>{children}</AppProvider>
-        </ToastProvider>
+        <Toaster position="bottom-right" richColors theme="dark" closeButton />
+        <AppProvider>{children}</AppProvider>
       </body>
     </html>
   );

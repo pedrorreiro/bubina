@@ -1,5 +1,5 @@
 import { useApp } from "@/context/AppContext";
-import { useToast } from "@/context/ToastContext";
+import { toast } from "sonner";
 import { useHistory } from "@/hooks/useHistory";
 import { 
   History, 
@@ -20,18 +20,18 @@ interface HistoryTabProps {
 export function HistoryTab({ onSetActiveTab }: HistoryTabProps) {
   const { historico, reabrirPedido } = useApp();
   const { deleteHistorico } = useHistory();
-  const { toast } = useToast();
 
   const handleReabrir = (pedido: any) => {
     reabrirPedido(pedido);
     onSetActiveTab("pedido");
   };
 
-  const handleExcluir = (id: string, e: React.MouseEvent) => {
+  const handleExcluir = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm("Deseja realmente remover este registro do histórico permanentemente?")) {
-      deleteHistorico(id);
-      toast("Venda removida do histórico", "info");
+    if (confirm("Remover venda do histórico?")) {
+      await deleteHistorico(id);
+      setHistorico(prev => prev.filter(p => p.id !== id));
+      toast.info("Venda removida do histórico");
     }
   };
 

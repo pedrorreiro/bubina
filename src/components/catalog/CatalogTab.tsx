@@ -1,16 +1,16 @@
 import { useState } from 'react';
+import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
-import { useToast } from '@/context/ToastContext';
+import { toast } from 'sonner';
 import { useCatalog } from '@/hooks/useCatalog';
 import { useSubscription } from '@/hooks/useSubscription';
-import { PlusCircle, LayoutList, Lock } from 'lucide-react';
+import { PlusCircle, LayoutList, Lock, X } from 'lucide-react';
 import type { Produto } from '@/types';
 
 export function CatalogTab() {
   const { produtos, isLoading: isAppLoading } = useApp();
   const { addProduto, deleteProduto } = useCatalog();
   const { subscription, isLoading: isSubLoading } = useSubscription();
-  const { toast } = useToast();
   const [nome, setNome] = useState('');
   const [preco, setPreco] = useState('');
   
@@ -28,13 +28,13 @@ export function CatalogTab() {
   const salvar = async () => {
     const p = parseFloat(preco);
     if (!nome.trim() || isNaN(p)) { 
-      toast('Preencha nome e preço corretamente', 'error'); 
+      toast.error('Preencha nome e preço corretamente'); 
       return; 
     }
     await addProduto(nome.trim(), p);
     setNome(''); 
     setPreco('');
-    toast('Produto registrado no catálogo!', 'success');
+    toast.success('Produto registrado no catálogo!');
   };
 
   return (
@@ -90,15 +90,18 @@ export function CatalogTab() {
           </div>
         </div>
       ) : (
-        <div className="glass-panel p-8 border-dashed border-primary/20 flex flex-col items-center justify-center text-center gap-4">
-           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+        <Link 
+          href="/paywall"
+          className="glass-panel p-8 border-dashed border-primary/20 flex flex-col items-center justify-center text-center gap-4 group hover:bg-primary/5 hover:border-primary/40 transition-all cursor-pointer"
+        >
+           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
               <Lock size={20} />
            </div>
            <div>
-              <h3 className="text-white font-bold">Gerenciamento de Catálogo</h3>
+              <h3 className="text-white font-bold group-hover:text-primary transition-colors">Gerenciamento de Catálogo</h3>
               <p className="text-sm text-text-dim mt-1">Atualize para o Premium para salvar seus produtos e vender com apenas um clique.</p>
            </div>
-        </div>
+        </Link>
       )}
 
       {/* Product List */}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSubscription, SubscriptionStatus } from "@/hooks/useSubscription";
-import { useToast } from "@/context/ToastContext";
+import { toast } from "sonner";
 import {
   CreditCard,
   Clock,
@@ -15,11 +15,17 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-export function SubscriptionCard() {
-  const { subscription: sub, isLoading, openPortal } = useSubscription();
 
-  const { toast } = useToast();
+export function SubscriptionCard() {
+  const {
+    subscription: sub,
+    isLoading,
+    openPortal,
+    cancelSubscription,
+  } = useSubscription();
+
   const [portalLoading, setPortalLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -30,10 +36,31 @@ export function SubscriptionCard() {
   const handleOpenPortal = async () => {
     setPortalLoading(true);
     try {
-      await openPortal();
+      const data = await openPortal();
+      window.open(data.url, "_blank");
     } catch (e) {
-      toast("Erro ao abrir o portal de assinatura", "error");
-      setPortalLoading(false);
+      toast.error("Erro ao abrir o portal de assinatura");
+    }
+    setPortalLoading(false);
+  };
+
+  const handleCancelPlan = async () => {
+    if (
+      !window.confirm(
+        "Tem certeza que deseja cancelar sua assinatura? Você manterá o acesso Premium até o final do período já pago, mas o plano não será renovado automaticamente.",
+      )
+    ) {
+      return;
+    }
+
+    setCancelLoading(true);
+    try {
+      const res = await cancelSubscription();
+      toast.success(res.message || "Assinatura cancelada com sucesso.");
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao cancelar assinatura");
+    } finally {
+      setCancelLoading(false);
     }
   };
 
@@ -125,7 +152,7 @@ export function SubscriptionCard() {
               </div>
               <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
                 <div
-                  className="h-full bg-gradient-to-r from-primary to-primary-light rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(59,130,246,0.4)]"
+                  className="h-full bg-primary to-primary-light rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(59,130,246,0.4)]"
                   style={{
                     width: `${Math.min(100, (hoursRemaining / 72) * 100)}%`,
                   }}
@@ -137,22 +164,46 @@ export function SubscriptionCard() {
 
         {/* Actions & Plan Info */}
         <div className="space-y-4">
-          {sub.reason === "paid" ? (
-            <button
-              onClick={handleOpenPortal}
-              disabled={portalLoading}
-              className="w-full h-[60px] flex items-center justify-center gap-3 rounded-2xl bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20 transition-all text-xs font-bold uppercase tracking-widest disabled:opacity-30 group"
-            >
-              {portalLoading ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <ExternalLink
-                  size={16}
-                  className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                />
+          {sub.reason === "manual" ? (
+            <div className="bg-primary/10 border border-primary/20 p-6 rounded-2xl flex flex-col items-center text-center gap-3">
+              <CheckCircle2 size={24} className="text-primary" />
+              <div>
+                <p className="text-sm font-bold text-white uppercase tracking-widest mb-1">
+                  Acesso Pro Vitalício
+                </p>
+                <p className="text-[10px] text-text-dim font-medium uppercase tracking-tighter">
+                  Sua conta possui acesso ilimitado concedido manualmente.
+                </p>
+              </div>
+            </div>
+          ) : sub.reason === "paid" ? (
+            <div className="space-y-4">
+              <button
+                onClick={handleOpenPortal}
+                disabled={portalLoading}
+                className="w-full h-[60px] flex items-center justify-center gap-3 rounded-2xl bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20 transition-all text-xs font-bold uppercase tracking-widest disabled:opacity-30 group"
+              >
+                {portalLoading ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <ExternalLink
+                    size={16}
+                    className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  />
+                )}
+                Gerenciar no Portal Stripe
+              </button>
+
+              {!sub.isCanceling && (
+                <button
+                  onClick={handleCancelPlan}
+                  disabled={cancelLoading}
+                  className="w-full py-4 text-[10px] font-bold text-red/40 hover:text-red transition-colors uppercase tracking-widest disabled:opacity-30"
+                >
+                  {cancelLoading ? "Processando..." : "Cancelar Assinatura"}
+                </button>
               )}
-              Gerenciar no Portal Stripe
-            </button>
+            </div>
           ) : (
             <div className="space-y-6">
               <div className="bg-black/20 p-6 rounded-2xl border border-white/5">
@@ -166,7 +217,7 @@ export function SubscriptionCard() {
                   {[
                     "Impressões Ilimitadas",
                     "Catálogo de Produtos",
-                    "Logotipo no Cupom",
+                    "Logomarca no Cupom",
                     "Suporte Prioritário",
                   ].map((feat, i) => (
                     <div key={i} className="flex items-center gap-2.5">
@@ -188,9 +239,6 @@ export function SubscriptionCard() {
                   <span className="text-[13px] font-bold uppercase tracking-widest">
                     Assinar ThermalPro
                   </span>
-                  <span className="text-[10px] font-medium opacity-70">
-                    Apenas R$ 20,00 por mês
-                  </span>
                 </div>
                 <ArrowRight
                   size={18}
@@ -206,6 +254,30 @@ export function SubscriptionCard() {
 }
 
 function getStatusConfig(sub: SubscriptionStatus, trialDays: number) {
+  if (sub.reason === "manual") {
+    return {
+      icon: CheckCircle2,
+      label: "Acesso Premium Vitalício",
+      description:
+        "Você possui acesso total e permanente aos recursos do ThermalPro.",
+      bgClass: "bg-primary/5 border-primary/20",
+      iconClass: "text-primary",
+      textClass: "text-primary",
+    };
+  }
+
+  if (sub.isCanceling) {
+    return {
+      icon: Clock,
+      label: "Cancelamento Programado",
+      description:
+        "Sua assinatura não será renovada, mas o acesso Pro continua garantido até o fim do ciclo.",
+      bgClass: "bg-red/5 border-red/20",
+      iconClass: "text-red",
+      textClass: "text-red",
+    };
+  }
+
   if (sub.reason === "trial") {
     if (trialDays <= 1) {
       return {
@@ -221,7 +293,7 @@ function getStatusConfig(sub: SubscriptionStatus, trialDays: number) {
     return {
       icon: Zap,
       label: "Recursos Pro Liberados",
-      description: `Você tem ${trialDays} dias de Pro grátis. Aproveite!`,
+      description: `Você está num período de teste. Aproveite os recursos Pro!`,
       bgClass: "bg-primary/5 border-primary/20",
       iconClass: "text-primary",
       textClass: "text-primary",

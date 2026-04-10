@@ -16,7 +16,8 @@ export async function getLoja(): Promise<Loja | null> {
     telefone: data.telefone,
     endereco: data.endereco,
     logo_raw: data.logo_raw,
-    logo_metodo: data.logo_metodo
+    logo_metodo: data.logo_metodo,
+    mensagem_rodape: data.mensagem_rodape,
   };
 }
 

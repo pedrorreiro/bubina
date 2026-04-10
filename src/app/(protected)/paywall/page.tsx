@@ -31,7 +31,7 @@ export default function PaywallPage() {
       <div className="relative z-10 w-full max-w-5xl">
         {/* Header */}
         <div className="text-center mb-16">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full mb-8 backdrop-blur-xl"
@@ -43,11 +43,13 @@ export default function PaywallPage() {
           </motion.div>
 
           <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight mb-6">
-            Eleve sua Operação com o <span className="text-primary italic">Pro</span>
+            Eleve sua Operação com o{" "}
+            <span className="text-primary italic">Pro</span>
           </h1>
 
           <p className="text-base text-text-dim max-w-xl mx-auto leading-relaxed">
-            Abandone os limites do plano gratuito e desbloqueie ferramentas profissionais de alta performance desenhadas para o seu crescimento.
+            Abandone os limites do plano gratuito e desbloqueie ferramentas
+            profissionais de alta performance desenhadas para o seu crescimento.
           </p>
         </div>
 
@@ -59,9 +61,8 @@ export default function PaywallPage() {
             period="/mês"
             description="Flexibilidade total para o seu dia a dia. Desbloqueie o potencial máximo."
             features={[
-              "Recibos Ilimitados",
-              "Catálogo de Produtos",
-              "Logotipo no Cupom",
+              "Logomarca no Cupom",
+              "Rodapé Personalizado",
               "Histórico Completo",
             ]}
             onSelect={() => handleCheckout("monthly")}
@@ -128,29 +129,73 @@ export default function PaywallPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/5">
-                    <th className="px-6 py-6 text-left text-[11px] font-bold text-text-dim uppercase tracking-widest">Funcionalidade</th>
-                    <th className="px-6 py-6 text-center text-[11px] font-bold text-text-dim uppercase tracking-widest">Free</th>
-                    <th className="px-6 py-6 text-center text-[11px] font-bold text-primary uppercase tracking-widest">Elite Pro</th>
+                    <th className="px-6 py-6 text-left text-[11px] font-bold text-text-dim uppercase tracking-widest">
+                      Funcionalidade
+                    </th>
+                    <th className="px-6 py-6 text-center text-[11px] font-bold text-text-dim uppercase tracking-widest">
+                      Free
+                    </th>
+                    <th className="px-6 py-6 text-center text-[11px] font-bold text-primary uppercase tracking-widest">
+                      Premium
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.02]">
+                <tbody className="divide-y divide-white/2">
                   {[
-                    { label: "Limite de Impressões", free: "15 por dia", pro: "Ilimitado" },
-                    { label: "Catálogo de Itens", free: "---", pro: "Ilimitado" },
-                    { label: "Branding no Cupom", free: "ThermalPro Logo", pro: "Seu Logotipo" },
-                    { label: "Vendas Manuais", free: "Liberado", pro: "Liberado" },
-                    { label: "Suporte Técnico", free: "Base de Conhecimento", pro: "Chat Prioritário" },
-                    { label: "Backup em Nuvem", free: "Síncrono", pro: "Síncrono + Histórico VIP" },
+                    {
+                      label: "Limite de Impressões",
+                      free: "15 por dia",
+                      pro: "Ilimitado",
+                    },
+                    {
+                      label: "Catálogo de Itens",
+                      free: "-",
+                      pro: "Ilimitado",
+                    },
+                    {
+                      label: "Logomarca no Cupom",
+                      free: "-",
+                      pro: "Sua logomarca",
+                    },
+                    {
+                      label: "Rodapé Personalizado",
+                      free: "Padrão",
+                      pro: "Remova ou Altere",
+                    },
+                    {
+                      label: "Vendas Manuais",
+                      free: "Liberado",
+                      pro: "Liberado",
+                    },
+                    {
+                      label: "Suporte Técnico",
+                      free: "-",
+                      pro: "Chat Prioritário",
+                    },
+                    {
+                      label: "Backup em Nuvem",
+                      free: "Automático",
+                      pro: "Automático + Histórico Ilimitado",
+                    },
                   ].map((row, i) => (
-                    <tr key={i} className="hover:bg-white/[0.01] transition-colors group">
+                    <tr
+                      key={i}
+                      className="hover:bg-white/[0.01] transition-colors group"
+                    >
                       <td className="px-6 py-6">
-                        <span className="text-sm font-semibold text-white group-hover:text-primary transition-colors">{row.label}</span>
+                        <span className="text-sm font-semibold text-white group-hover:text-primary transition-colors">
+                          {row.label}
+                        </span>
                       </td>
                       <td className="px-6 py-6 text-center">
-                        <span className="text-xs font-medium text-text-dim/50">{row.free}</span>
+                        <span className="text-xs font-medium text-text-dim/50">
+                          {row.free}
+                        </span>
                       </td>
                       <td className="px-6 py-6 text-center">
-                        <span className="text-sm font-bold text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">{row.pro}</span>
+                        <span className="text-sm font-bold text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">
+                          {row.pro}
+                        </span>
                       </td>
                     </tr>
                   ))}
@@ -166,7 +211,10 @@ export default function PaywallPage() {
             href="/"
             className="group inline-flex items-center gap-3 text-text-dim hover:text-white transition-all text-sm font-bold"
           >
-            <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-1" />
+            <ArrowLeft
+              size={18}
+              className="transition-transform group-hover:-translate-x-1"
+            />
             Voltar ao Painel
           </Link>
         </div>

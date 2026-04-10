@@ -19,7 +19,7 @@ import { processLogo } from "../services/image";
 import { DEFAULT_LOJA } from "../types";
 import { 
   addToHistorico as storageAddHist, 
-  saveLoja 
+  saveLoja as storageSaveLoja 
 } from "../services/storage";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -47,6 +47,7 @@ interface AppState {
   // Loja
   loja: Loja;
   setLoja: (l: Loja) => Promise<void>;
+  updateLojaLocally: (l: Loja) => void;
   setLojaState: (l: Loja) => void;
   setHasLoja: (b: boolean) => void;
 
@@ -168,8 +169,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPedidoReaberto(pedido);
   };
 
-  const setLoja = async (l: Loja) => {
-    await saveLoja(l);
+  const updateLojaLocally = (l: Loja) => {
+    setLojaState(l);
+  };
+
+  const saveLojaToDatabase = async (l: Loja) => {
+    await storageSaveLoja(l);
     setLojaState(l);
     setHasLoja(true);
   };
@@ -192,7 +197,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         produtos,
         setProdutos,
         loja,
-        setLoja,
+        setLoja: saveLojaToDatabase,
+        updateLojaLocally,
         setLojaState,
         setHasLoja,
         historico,

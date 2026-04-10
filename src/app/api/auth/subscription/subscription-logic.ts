@@ -3,11 +3,29 @@
  */
 function calculateSubscriptionStatus(loja: any): any {
   if (!loja) {
-    return { active: false, reason: 'no_store', trialEndsAt: null, subscriptionStatus: null };
+    return { 
+      active: false, 
+      reason: 'no_store', 
+      trialEndsAt: null, 
+      subscriptionStatus: null,
+      isCanceling: false 
+    };
+  }
+
+  // 1. Check for manual override (Lifetime/Manual access)
+  if (loja.is_premium) {
+    return {
+      active: true,
+      reason: 'manual',
+      trialEndsAt: null,
+      subscriptionStatus: 'active',
+      isCanceling: false
+    };
   }
 
   const now = new Date();
   const trialEndsAt = loja.trial_ends_at ? new Date(loja.trial_ends_at) : null;
+  const isCanceling = !!loja.is_canceling;
   
   const inTrial = trialEndsAt ? trialEndsAt > now : false;
   if (inTrial) {
@@ -16,16 +34,18 @@ function calculateSubscriptionStatus(loja: any): any {
       reason: 'trial',
       trialEndsAt: loja.trial_ends_at,
       subscriptionStatus: loja.subscription_status,
+      isCanceling
     };
   }
 
-  const isPaid = loja.subscription_status === 'active';
+  const isPaid = loja.subscription_status === 'active' || loja.subscription_status === 'past_due';
   if (isPaid) {
     return {
       active: true,
       reason: 'paid',
       trialEndsAt: loja.trial_ends_at,
       subscriptionStatus: loja.subscription_status,
+      isCanceling
     };
   }
 
@@ -34,6 +54,7 @@ function calculateSubscriptionStatus(loja: any): any {
     reason: 'expired',
     trialEndsAt: loja.trial_ends_at,
     subscriptionStatus: loja.subscription_status,
+    isCanceling
   };
 }
 
@@ -45,13 +66,13 @@ export async function getSubscription(supabase: any, userId: string): Promise<an
     console.log(`📡 [Logic] Iniciando query para user: ${userId}`);
     const { data: loja, error: dbError } = await supabase
       .from('lojas')
-      .select('trial_ends_at, subscription_status')
+      .select('trial_ends_at, subscription_status, is_premium, is_canceling')
       .eq('user_id', userId)
       .maybeSingle();
 
     if (dbError) {
       console.error('❌ [Logic] Erro banco:', dbError);
-      return { active: false, reason: 'expired' };
+      return { active: false, reason: 'expired', isCanceling: false };
     }
 
     console.log('📊 [Logic] Dados do banco recebidos, calculando...');

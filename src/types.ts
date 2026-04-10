@@ -16,7 +16,7 @@ export interface ItemPedido {
 
 export interface Desconto {
   nome: string;
-  tipo: 'valor' | 'percentual';
+  tipo: "valor" | "percentual";
   valor: number;
 }
 
@@ -24,6 +24,7 @@ export interface Pedido {
   cpf: string | null;
   itens: ItemPedido[];
   descontos: Desconto[];
+  total: number;
 }
 
 export interface HistoricoPedido extends Pedido {
@@ -43,16 +44,16 @@ export interface Loja {
   largura_colunas: number;
   logo?: string; // Processed bit data (cached)
   logo_raw?: string; // Original grayscale data
-  logo_metodo?: 'threshold' | 'dither';
+  logo_metodo?: "threshold" | "dither";
 }
 
 export const DEFAULT_LOJA: Loja = {
-  nome: 'ESTABELECIMENTO',
-  telefone: '',
-  endereco: '',
-  chave_pix: '',
-  cidade: '',
-  mensagem_rodape: 'Obrigado pela preferencia!',
+  nome: "ESTABELECIMENTO",
+  telefone: "",
+  endereco: "",
+  chave_pix: "",
+  cidade: "",
+  mensagem_rodape: "Obrigado pela preferencia!",
   largura_mm: 48,
   largura_colunas: 32,
 };
