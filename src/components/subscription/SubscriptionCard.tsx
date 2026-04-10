@@ -15,7 +15,6 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-
 export function SubscriptionCard() {
   const {
     subscription: sub,
@@ -37,6 +36,7 @@ export function SubscriptionCard() {
     setPortalLoading(true);
     try {
       const data = await openPortal();
+      // @ts-ignore
       window.open(data.url, "_blank");
     } catch (e) {
       toast.error("Erro ao abrir o portal de assinatura");
