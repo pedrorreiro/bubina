@@ -30,7 +30,6 @@ export function HistoryTab({ onSetActiveTab }: HistoryTabProps) {
     e.stopPropagation();
     if (confirm("Remover venda do histórico?")) {
       await deleteHistorico(id);
-      setHistorico(prev => prev.filter(p => p.id !== id));
       toast.info("Venda removida do histórico");
     }
   };

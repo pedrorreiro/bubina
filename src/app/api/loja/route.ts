@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   // Verificar se está tentando mudar a logo ou o rodapé
   const isChangingLogo = loja.logo_raw !== currentLoja?.logo_raw;
   const isChangingRodape =
-    loja.mensagem_rodape !== currentLoja?.mensagem_rodape;
+    loja.mensagem_rodape !== (currentLoja as any)?.mensagem_rodape;
 
   if (isChangingLogo || isChangingRodape) {
     const subscription = await getSubscription(supabase, user.id);
