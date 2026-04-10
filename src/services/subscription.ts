@@ -171,16 +171,18 @@ export class SubscriptionService {
         const periodEnd = await this.fetchPeriodEndFromStripe(subscriptionId);
 
         if (lojaId) {
-          await supabase
-            .from("lojas")
-            .update({
-              stripe_subscription_id: subscriptionId,
-              stripe_customer_id: customerId,
-              subscription_status: "active",
-              current_period_end: periodEnd,
-              is_canceling: false,
-            })
-            .eq("id", lojaId);
+          const data = {
+            stripe_subscription_id: subscriptionId,
+            stripe_customer_id: customerId,
+            subscription_status: "active",
+            current_period_end: periodEnd,
+            is_canceling: false,
+          };
+
+          console.log("📦 [Service] Atualizando loja", lojaId);
+          console.log("📦 [Service] Atualizando loja com os dados:", data);
+
+          await supabase.from("lojas").update(data).eq("id", lojaId);
         }
         break;
       }
@@ -247,8 +249,6 @@ export class SubscriptionService {
         return new Date(subscription.current_period_end * 1000).toISOString();
       }
       // Fallback para billing flexível
-      console.log("📦 [Service] Tem subscription", !!subscription);
-      console.log("📦 [Service] subscription.created", subscription.created);
       if (subscription && subscription.created) {
         const duration = subscription.plan?.interval === "year" ? 366 : 31;
         const date = new Date(subscription.created * 1000);
