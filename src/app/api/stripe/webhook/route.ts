@@ -43,8 +43,14 @@ export async function POST(req: NextRequest) {
         // Buscar detalhes da assinatura para pegar a data de expiração (current_period_end)
         let periodEnd = null;
         if (subscriptionId) {
-          const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any;
-          periodEnd = new Date(subscription.current_period_end * 1000).toISOString();
+          try {
+            const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any;
+            if (subscription && typeof subscription.current_period_end === 'number') {
+              periodEnd = new Date(subscription.current_period_end * 1000).toISOString();
+            }
+          } catch (e) {
+            console.error('⚠️ [Webhook] Erro ao processar data da assinatura:', e);
+          }
         }
 
         // Método Recomendado: Usar o ID da loja que enviamos no checkout
@@ -83,7 +89,12 @@ export async function POST(req: NextRequest) {
     case 'customer.subscription.updated': {
       const subscription = event.data.object as any;
       const customerId = subscription.customer as string;
-      const periodEnd = new Date(subscription.current_period_end * 1000).toISOString();
+      
+      let periodEnd = null;
+      if (typeof subscription.current_period_end === 'number') {
+        periodEnd = new Date(subscription.current_period_end * 1000).toISOString();
+      }
+      
       const isCanceling = subscription.cancel_at_period_end;
 
       const { error } = await supabase
