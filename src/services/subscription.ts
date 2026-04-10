@@ -17,12 +17,12 @@ export class SubscriptionService {
    */
   static async getSubscriptionStatus(
     supabase: SupabaseClient,
-    userId: string
+    userId: string,
   ): Promise<SubscriptionStatus> {
     const { data: loja, error: dbError } = await supabase
       .from("lojas")
       .select(
-        "trial_ends_at, subscription_status, is_premium, is_canceling, current_period_end"
+        "trial_ends_at, subscription_status, is_premium, is_canceling, current_period_end",
       )
       .eq("user_id", userId)
       .maybeSingle();
@@ -58,7 +58,9 @@ export class SubscriptionService {
     }
 
     const now = new Date();
-    const trialEndsAt = loja.trial_ends_at ? new Date(loja.trial_ends_at) : null;
+    const trialEndsAt = loja.trial_ends_at
+      ? new Date(loja.trial_ends_at)
+      : null;
     const isCanceling = !!loja.is_canceling;
 
     // 2. Check for trial period
@@ -113,7 +115,7 @@ export class SubscriptionService {
     userId: string,
     email: string,
     priceType: "monthly" | "annual",
-    baseUrl: string
+    baseUrl: string,
   ) {
     // 1. Buscar ou Criar Loja
     const { data: loja } = await supabase
@@ -155,7 +157,10 @@ export class SubscriptionService {
   /**
    * Processa eventos do Webhook do Stripe.
    */
-  static async processWebhookEvent(supabase: SupabaseClient, event: Stripe.Event) {
+  static async processWebhookEvent(
+    supabase: SupabaseClient,
+    event: Stripe.Event,
+  ) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
@@ -230,14 +235,20 @@ export class SubscriptionService {
   /**
    * Auxiliar para buscar a data de expiração no Stripe com fallback.
    */
-  private static async fetchPeriodEndFromStripe(subscriptionId: string): Promise<string | null> {
+  private static async fetchPeriodEndFromStripe(
+    subscriptionId: string,
+  ): Promise<string | null> {
     if (!subscriptionId) return null;
     try {
-      const subscription = (await stripe.subscriptions.retrieve(subscriptionId)) as any;
+      const subscription = (await stripe.subscriptions.retrieve(
+        subscriptionId,
+      )) as any;
       if (subscription && typeof subscription.current_period_end === "number") {
         return new Date(subscription.current_period_end * 1000).toISOString();
       }
       // Fallback para billing flexível
+      console.log("📦 [Service] Tem subscription", !!subscription);
+      console.log("📦 [Service] subscription.created", subscription.created);
       if (subscription && subscription.created) {
         const duration = subscription.plan?.interval === "year" ? 366 : 31;
         const date = new Date(subscription.created * 1000);
