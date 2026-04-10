@@ -182,7 +182,17 @@ export class SubscriptionService {
           console.log("📦 [Service] Atualizando loja", lojaId);
           console.log("📦 [Service] Atualizando loja com os dados:", data);
 
-          await supabase.from("lojas").update(data).eq("id", lojaId);
+          const { error: updateError } = await supabase
+            .from("lojas")
+            .update(data)
+            .eq("id", lojaId);
+
+          if (updateError) {
+            console.error("❌ [Service] Erro ao atualizar banco:", updateError.message);
+            console.error("❌ [Service] Detalhes do erro:", updateError);
+          } else {
+            console.log("✅ [Service] Banco atualizado com sucesso!");
+          }
         }
         break;
       }
@@ -194,7 +204,7 @@ export class SubscriptionService {
           ? new Date(subscription.current_period_end * 1000).toISOString()
           : null;
 
-        await supabase
+        const { error: updateError } = await supabase
           .from("lojas")
           .update({
             subscription_status: subscription.status,
@@ -203,6 +213,10 @@ export class SubscriptionService {
             is_canceling: subscription.cancel_at_period_end,
           })
           .eq("stripe_customer_id", customerId);
+
+        if (updateError) {
+          console.error("❌ [Service] Erro ao atualizar assinatura:", updateError.message);
+        }
         break;
       }
 
@@ -210,7 +224,7 @@ export class SubscriptionService {
         const subscription = event.data.object as any;
         const customerId = subscription.customer as string;
 
-        await supabase
+        const { error: updateError } = await supabase
           .from("lojas")
           .update({
             subscription_status: "canceled",
@@ -219,16 +233,24 @@ export class SubscriptionService {
             is_canceling: false,
           })
           .eq("stripe_customer_id", customerId);
+
+        if (updateError) {
+          console.error("❌ [Service] Erro ao deletar assinatura:", updateError.message);
+        }
         break;
       }
 
       case "invoice.payment_failed": {
         const invoice = event.data.object as any;
         const customerId = invoice.customer as string;
-        await supabase
+        const { error: updateError } = await supabase
           .from("lojas")
           .update({ subscription_status: "past_due" })
           .eq("stripe_customer_id", customerId);
+
+        if (updateError) {
+          console.error("❌ [Service] Erro ao marcar falha de pagamento:", updateError.message);
+        }
         break;
       }
     }
