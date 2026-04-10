@@ -1,4 +1,4 @@
-import React from "react";
+import { Printer } from "lucide-react";
 
 export default function GlobalLoading() {
   return (
@@ -15,9 +15,9 @@ export default function GlobalLoading() {
 
         {/* Logo/Branding discreto abaixo do spinner */}
         <div className="mt-8 flex flex-col items-center animate-pulse">
-          <h1 className="text-xl font-black text-white mt-2 tracking-tighter uppercase opacity-30">
-            Thermal<span className="text-primary italic">Pro</span>
-          </h1>
+          <div className="flex items-center gap-2 text-xl font-black text-white mt-2 tracking-tighter uppercase opacity-30">
+            Bubina
+          </div>
         </div>
       </div>
     </div>

@@ -16,8 +16,8 @@ const jbm = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Thermal Pro | PDV Inteligente",
-  description: "Sistema de frente de caixa para impressoras térmicas",
+  title: "Bubina | PDV Inteligente",
+  description: "O sistema de vendas mais rápido para sua impressora térmica",
 };
 
 export const viewport: Viewport = {

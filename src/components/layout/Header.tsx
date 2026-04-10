@@ -103,7 +103,7 @@ export function Header() {
               />
             </div>
             <span className="text-lg font-bold tracking-tight text-white hidden sm:block">
-              Thermal<span className="text-primary italic">Pro</span>
+              Bubina
             </span>
           </div>
 

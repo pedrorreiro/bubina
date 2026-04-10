@@ -47,25 +47,18 @@ export function StoreOnboarding() {
       >
         <div className="flex flex-col items-center mb-12">
           <motion.div 
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="w-20 h-20 glass-panel flex items-center justify-center mb-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-white/10 group overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-primary/10 scale-y-0 group-hover:scale-y-100 transition-transform origin-bottom duration-500" />
-            <Printer size={36} className="text-primary relative z-10 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
             className="flex flex-col items-center"
           >
+            <div className="w-16 h-16 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-6 shadow-2xl shadow-primary/20">
+              <Printer size={32} />
+            </div>
             <h1 className="text-4xl font-bold text-white tracking-tighter mb-3">
-              Thermal<span className="text-primary italic">Pro</span>
+              Bubina
             </h1>
-            <p className="text-text-dim font-semibold text-center text-[10px] uppercase tracking-[0.4em]">
+            <p className="text-text-dim font-bold text-center text-[10px] uppercase tracking-[0.4em]">
               SaaS Operational Framework
             </p>
           </motion.div>

@@ -169,7 +169,7 @@ export function SubscriptionCard() {
               <CheckCircle2 size={24} className="text-primary" />
               <div>
                 <p className="text-sm font-bold text-white uppercase tracking-widest mb-1">
-                  Acesso Pro Vitalício
+                  Acesso Bubina Pro
                 </p>
                 <p className="text-[10px] text-text-dim font-medium uppercase tracking-tighter">
                   Sua conta possui acesso ilimitado concedido manualmente.
@@ -237,7 +237,7 @@ export function SubscriptionCard() {
                 <Zap size={18} className="fill-white" />
                 <div className="flex flex-col items-start leading-tight">
                   <span className="text-[13px] font-bold uppercase tracking-widest">
-                    Assinar ThermalPro
+                    Assinar Bubina Pro
                   </span>
                 </div>
                 <ArrowRight
@@ -259,7 +259,7 @@ function getStatusConfig(sub: SubscriptionStatus, trialDays: number) {
       icon: CheckCircle2,
       label: "Acesso Premium Vitalício",
       description:
-        "Você possui acesso total e permanente aos recursos do ThermalPro.",
+        "Você possui acesso total e permanente aos recursos do Bubina.",
       bgClass: "bg-primary/5 border-primary/20",
       iconClass: "text-primary",
       textClass: "text-primary",

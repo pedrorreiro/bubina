@@ -52,10 +52,10 @@ export default function LoginPage() {
       <div className="w-full max-w-md bg-surface border border-border rounded-2xl p-8 z-10 shadow-2xl relative">
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-surface-raised border border-border shadow-inner mb-4">
-            <span className="text-2xl font-black text-white">TP</span>
+            <span className="text-2xl font-black text-white">B</span>
           </div>
           <h1 className="text-3xl font-black text-white tracking-tighter uppercase">
-            Thermal<span className="text-primary italic">Pro</span>
+            Bubina
           </h1>
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-text-dim mt-2">
             Ponto de Venda em Nuvem

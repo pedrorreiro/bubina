@@ -56,7 +56,7 @@ export default function OnboardingPage() {
             <Printer size={32} className="text-primary relative z-10" />
           </div>
           <h1 className="text-3xl font-black text-white uppercase tracking-tighter mb-2">
-            Bem-vindo ao <span className="text-primary italic">ThermalPro</span>
+            Bem-vindo ao <span className="text-primary italic">Bubina</span>
           </h1>
           <p className="text-text-dim font-bold text-center text-sm uppercase tracking-[0.2em]">
             Configuração do seu negócio
@@ -119,7 +119,7 @@ export default function OnboardingPage() {
         </div>
 
         <p className="mt-10 text-center text-[9px] font-black text-text-dim uppercase tracking-widest leading-relaxed">
-          Ao prosseguir, você concorda que o <span className="text-white">ThermalPro</span> processe seus dados com segurança na nuvem.
+          Ao prosseguir, você concorda que o <span className="text-white">Bubina</span> processe seus dados com segurança na nuvem.
         </p>
       </motion.div>
     </div>
