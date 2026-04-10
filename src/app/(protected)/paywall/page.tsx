@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 export default function PaywallPage() {
   const { createCheckout } = useSubscription();
@@ -21,10 +22,19 @@ export default function PaywallPage() {
 
   const handleCheckout = async (priceType: "monthly" | "annual") => {
     setLoading(priceType);
+    const toastId = toast.loading("Preparando checkout seguro...");
+    
     try {
-      await createCheckout(priceType);
+      const { url } = await createCheckout(priceType);
+      if (url) {
+        toast.success("Redirecionando para o Stripe...", { id: toastId });
+        window.location.href = url;
+      } else {
+        throw new Error("URL de checkout não recebida");
+      }
     } catch (e) {
       console.error("Erro ao criar checkout:", e);
+      toast.error("Erro ao iniciar checkout. Tente novamente.", { id: toastId });
       setLoading(null);
     }
   };
