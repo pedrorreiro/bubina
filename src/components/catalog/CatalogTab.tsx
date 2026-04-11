@@ -22,6 +22,7 @@ import {
 } from "@chakra-ui/react";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
+import { appPanelProps } from "@/theme/layout";
 
 function SectionHeader({
   icon: Icon,
@@ -136,7 +137,7 @@ export function CatalogTab() {
             position={{ base: "static", lg: "sticky" }}
             top={{ lg: 6 }}
             w="full"
-            className="app-panel"
+            {...appPanelProps}
             overflow="hidden"
           >
             <Box p={{ base: 5, md: 6 }}>
@@ -217,7 +218,7 @@ export function CatalogTab() {
         ) : (
           <Link href="/paywall" style={{ textDecoration: "none", width: "100%" }}>
             <Box
-              className="app-panel"
+              {...appPanelProps}
               p={{ base: 5, md: 6 }}
               transition="all 0.2s"
               cursor="pointer"
@@ -254,7 +255,7 @@ export function CatalogTab() {
           </Link>
         )}
 
-        <Box className="app-panel" overflow="hidden" display="flex" flexDirection="column" minW={0}>
+        <Box {...appPanelProps} overflow="hidden" display="flex" flexDirection="column" minW={0}>
           <Box p={{ base: 5, md: 6 }} flexShrink={0}>
             <Flex
               align="flex-start"

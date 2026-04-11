@@ -1,9 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { OrderTab } from '@/components/order/OrderTab';
-import { useApp } from '@/context/AppContext';
-import { getProdutos, getLoja } from '@/services/api';
+import { useEffect } from "react";
+import { Center, Spinner } from "@chakra-ui/react";
+import { OrderTab } from "@/components/order/OrderTab";
+import { useApp } from "@/context/AppContext";
+import { getProdutos, getLoja } from "@/services/api";
 
 export default function PedidoPage() {
   const { 
@@ -31,9 +32,9 @@ export default function PedidoPage() {
   
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-32">
-        <div className="w-8 h-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
-      </div>
+      <Center py="32">
+        <Spinner size="lg" color="#5b9cf5" borderWidth="4px" />
+      </Center>
     );
   }
 

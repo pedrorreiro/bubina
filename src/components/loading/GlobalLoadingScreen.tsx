@@ -1,63 +1,190 @@
+"use client";
+
+import { Box, Flex, Text, VStack } from "@chakra-ui/react";
+
+const BG = "#0a0b10";
+const EDGE = "rgba(255,255,255,0.06)";
+const PRIMARY = "#5b9cf5";
+const SURFACE_RAISED = "#1a1d28";
+const SURFACE_INSET = "#0d0e15";
+
 export function GlobalLoadingScreen() {
   return (
-    <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center bg-bg text-text relative overflow-hidden">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.45]"
+    <Flex
+      minH="100dvh"
+      w="full"
+      direction="column"
+      align="center"
+      justify="center"
+      bg={BG}
+      color="#e4e8f0"
+      position="relative"
+      overflow="hidden"
+    >
+      <Box
+        position="absolute"
+        inset={0}
+        pointerEvents="none"
+        opacity={0.45}
         style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, var(--color-edge) 1px, transparent 0)",
+          backgroundImage: `radial-gradient(circle at 1px 1px, ${EDGE} 1px, transparent 0)`,
           backgroundSize: "32px 32px",
         }}
       />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(91,156,245,0.14),transparent_55%)]" />
-      <div className="pointer-events-none absolute top-[-100px] left-[-80px] h-[340px] w-[340px] rounded-full bg-primary/14 blur-[100px]" />
-      <div className="pointer-events-none absolute bottom-[-120px] right-[-60px] h-[380px] w-[380px] rounded-full bg-primary/8 blur-[110px]" />
+      <Box
+        position="absolute"
+        inset={0}
+        pointerEvents="none"
+        bgImage="radial-gradient(ellipse 80% 60% at 50% -10%, rgba(91,156,245,0.14), transparent 55%)"
+      />
+      <Box
+        position="absolute"
+        top="-100px"
+        left="-80px"
+        h="340px"
+        w="340px"
+        rounded="full"
+        bg="rgba(91,156,245,0.14)"
+        filter="blur(100px)"
+        pointerEvents="none"
+      />
+      <Box
+        position="absolute"
+        bottom="-120px"
+        right="-60px"
+        h="380px"
+        w="380px"
+        rounded="full"
+        bg="rgba(91,156,245,0.08)"
+        filter="blur(110px)"
+        pointerEvents="none"
+      />
 
-      <div className="relative z-10 flex w-full max-w-sm flex-col items-center gap-10 px-6">
-        <div className="relative flex w-full flex-col items-center pt-4">
-          <div className="relative flex justify-center">
-            <div className="relative z-10 w-[200px] rounded-t-2xl border border-border border-b-0 bg-surface-raised px-4 pb-3 pt-4 shadow-[0_16px_48px_rgba(0,0,0,0.35)]">
-              <div className="mx-auto mb-3 flex h-2 w-[72%] items-center justify-center rounded-full bg-black/35 shadow-inner" />
-              <div className="mx-auto h-1 w-[88%] rounded-full bg-primary/25" />
+      <VStack position="relative" zIndex={1} w="full" maxW="sm" gap="10" px="6">
+        <Flex direction="column" align="center" w="full" pt="4">
+          <Flex justify="center" position="relative">
+            <Box
+              position="relative"
+              zIndex={1}
+              w="200px"
+              roundedTop="2xl"
+              borderWidth="1px"
+              borderBottomWidth={0}
+              borderColor={EDGE}
+              bg={SURFACE_RAISED}
+              px="4"
+              pb="3"
+              pt="4"
+              boxShadow="0 16px 48px rgba(0,0,0,0.35)"
+            >
+              <Box
+                mx="auto"
+                mb="3"
+                display="flex"
+                h="2"
+                w="72%"
+                alignItems="center"
+                justifyContent="center"
+                rounded="full"
+                bg="rgba(0,0,0,0.35)"
+                boxShadow="inset 0 1px 2px rgba(0,0,0,0.4)"
+              />
+              <Box mx="auto" h="1" w="88%" rounded="full" bg={`${PRIMARY}40`} />
 
-              <div className="relative -mb-1 mt-0 flex justify-center">
-                <div className="animate-loading-receipt-feed relative w-[78%] origin-top">
-                  <div className="relative overflow-hidden rounded-b-lg border border-black/10 border-t-0 bg-[#eceae4] px-3 pb-5 pt-3 shadow-[0_8px_24px_rgba(0,0,0,0.2)]">
-                    <div
-                      className="pointer-events-none absolute inset-0 animate-loading-receipt-shine opacity-90"
-                      aria-hidden
+              <Flex justify="center" position="relative" mt={0} mb="-1">
+                <Box
+                  animation="appReceiptFeed 2.4s ease-in-out infinite"
+                  position="relative"
+                  w="78%"
+                  transformOrigin="top"
+                >
+                  <Box
+                    position="relative"
+                    overflow="hidden"
+                    roundedBottom="lg"
+                    borderWidth="1px"
+                    borderTopWidth={0}
+                    borderColor="rgba(0,0,0,0.1)"
+                    bg="#eceae4"
+                    px="3"
+                    pb="5"
+                    pt="3"
+                    boxShadow="0 8px 24px rgba(0,0,0,0.2)"
+                  >
+                    <Box
+                      pointerEvents="none"
+                      position="absolute"
+                      inset={0}
+                      opacity={0.9}
+                      animation="appReceiptShine 2.8s ease-in-out infinite"
+                      bgGradient="linear(105deg, transparent 0%, transparent 40%, rgba(91,156,245,0.22) 50%, transparent 60%, transparent 100%)"
+                      backgroundSize="220% 100%"
                     />
-                    <div className="relative space-y-2">
-                      <div className="mx-auto h-1 w-[55%] rounded-full bg-black/15" />
-                      <div className="h-1 w-full rounded-full bg-black/10" />
-                      <div className="h-1 w-[92%] rounded-full bg-black/10" />
-                      <div className="h-1 w-[78%] rounded-full bg-black/10" />
-                      <div className="h-1 w-[88%] rounded-full bg-black/10" />
-                      <div className="pt-1">
-                        <div className="mx-auto h-6 w-[70%] rounded border border-dashed border-black/15 bg-black/5" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+                    <VStack gap="2" position="relative" align="stretch">
+                      <Box mx="auto" h="1" w="55%" rounded="full" bg="rgba(0,0,0,0.15)" />
+                      <Box h="1" w="full" rounded="full" bg="rgba(0,0,0,0.1)" />
+                      <Box h="1" w="92%" rounded="full" bg="rgba(0,0,0,0.1)" />
+                      <Box h="1" w="78%" rounded="full" bg="rgba(0,0,0,0.1)" />
+                      <Box h="1" w="88%" rounded="full" bg="rgba(0,0,0,0.1)" />
+                      <Box pt="1">
+                        <Box
+                          mx="auto"
+                          h="6"
+                          w="70%"
+                          rounded="md"
+                          borderWidth="1px"
+                          borderStyle="dashed"
+                          borderColor="rgba(0,0,0,0.15)"
+                          bg="rgba(0,0,0,0.05)"
+                        />
+                      </Box>
+                    </VStack>
+                  </Box>
+                </Box>
+              </Flex>
+            </Box>
+          </Flex>
 
-          <div
-            className="relative z-0 -mt-1 h-3 w-[220px] max-w-full rounded-full bg-gradient-to-b from-surface to-bg shadow-inner ring-1 ring-edge"
+          <Box
+            position="relative"
+            zIndex={0}
+            mt="-1"
+            h="3"
+            w="220px"
+            maxW="full"
+            rounded="full"
+            bgGradient="linear(to-b, #14161e, #0a0b10)"
+            boxShadow="inset 0 1px 2px rgba(0,0,0,0.4)"
+            borderWidth="1px"
+            borderColor={EDGE}
             aria-hidden
           />
-        </div>
+        </Flex>
 
-        <div className="flex flex-col items-center text-center gap-2">
-          <p className="text-sm font-medium leading-normal text-text-muted">
+        <VStack gap="2" textAlign="center">
+          <Text fontSize="sm" fontWeight="medium" lineHeight="normal" color="#8f98ad">
             Carregando
-          </p>
-          <div className="h-1 w-40 shrink-0 overflow-hidden rounded-full bg-surface-inset ring-1 ring-edge">
-            <div className="h-full w-1/3 rounded-full bg-gradient-to-r from-primary/20 via-primary to-primary/60 animate-loading-bar-slide" />
-          </div>
-        </div>
-      </div>
-    </div>
+          </Text>
+          <Box
+            h="1"
+            w="40"
+            flexShrink={0}
+            overflow="hidden"
+            rounded="full"
+            bg={SURFACE_INSET}
+            borderWidth="1px"
+            borderColor={EDGE}
+          >
+            <Box
+              h="full"
+              w="33.333%"
+              rounded="full"
+              bgGradient={`linear(to-r, ${PRIMARY}33, ${PRIMARY}, ${PRIMARY}99)`}
+              animation="appBarSlide 1.2s ease-in-out infinite"
+            />
+          </Box>
+        </VStack>
+      </VStack>
+    </Flex>
   );
 }

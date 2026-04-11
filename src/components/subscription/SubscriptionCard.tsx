@@ -26,6 +26,7 @@ import {
   HStack,
 } from "@chakra-ui/react";
 import { Button } from "@/components/ui/button";
+import { appPanelProps } from "@/theme/layout";
 
 export function SubscriptionCard() {
   const {
@@ -79,7 +80,7 @@ export function SubscriptionCard() {
 
   if (isLoading) {
     return (
-      <Box className="app-panel" overflow="hidden">
+      <Box {...appPanelProps} overflow="hidden">
         <Center py="12">
           <Spinner color="blue.400" size="lg" borderWidth="3px" />
         </Center>
@@ -120,7 +121,7 @@ export function SubscriptionCard() {
   const statusConfig = getStatusConfig(sub, hoursRemaining / 24);
 
   return (
-    <Box className="app-panel" overflow="hidden" h="full">
+    <Box {...appPanelProps} overflow="hidden" h="full">
       <Box p={{ base: 5, md: 6 }}>
         <Flex align="center" gap="3" pb="4" mb="1" borderBottomWidth="1px" borderColor="var(--color-edge)">
           <Center
@@ -248,7 +249,7 @@ export function SubscriptionCard() {
               textAlign="center"
               gap={3}
             >
-              <CheckCircle2 size={24} className="text-blue-400" />
+              <CheckCircle2 size={24} color="#60a5fa" />
               <Box>
                 <Text fontSize="sm" fontWeight="bold" textTransform="uppercase">
                   Acesso Bubina Pro
@@ -328,7 +329,7 @@ export function SubscriptionCard() {
                     "Suporte 24h",
                   ].map((feat, i) => (
                     <HStack key={i} gap="2.5">
-                      <CheckCircle2 size={14} className="text-blue-400" />
+                      <CheckCircle2 size={14} color="#60a5fa" />
                       <Text
                         fontSize="11px"
                         fontWeight="semibold"

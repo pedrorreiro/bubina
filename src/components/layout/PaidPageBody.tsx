@@ -12,7 +12,10 @@ export function PaidPageBody({ children }: { children: React.ReactNode }) {
       minW="0"
       w="full"
       px={{ base: 6, md: 8 }}
-      pb={{ base: "var(--spacing-app-bottom-mobile)", md: 0 }}
+      pb={{
+        base: "calc(4rem + env(safe-area-inset-bottom, 0px) + 1.25rem)",
+        md: 0,
+      }}
     >
       {children}
     </Flex>

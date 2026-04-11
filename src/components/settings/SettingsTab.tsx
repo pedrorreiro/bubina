@@ -24,6 +24,7 @@ import {
 import { Field } from "@/components/ui/field";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { appPanelProps } from "@/theme/layout";
 
 const inputProps = {
   variant: "subtle" as const,
@@ -235,7 +236,7 @@ export function SettingsTab() {
 
         <VStack align="stretch" gap={5}>
           {/* Dados da loja */}
-          <Box className="app-panel" overflow="hidden">
+          <Box {...appPanelProps} overflow="hidden">
             <Box p={{ base: 5, md: 6 }}>
               <SectionHeader
                 icon={Store}
@@ -276,7 +277,7 @@ export function SettingsTab() {
           </Box>
 
           {/* Cupom: rodapé + logo */}
-          <Box className="app-panel" overflow="hidden">
+          <Box {...appPanelProps} overflow="hidden">
             <Box p={{ base: 5, md: 6 }}>
               <SectionHeader
                 icon={ImageIcon}

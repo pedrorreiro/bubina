@@ -1,17 +1,32 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useApp } from '@/context/AppContext';
-import { motion } from 'framer-motion';
-import { Store, Phone, ArrowRight, Printer, LogOut } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { useState } from "react";
+import { useApp } from "@/context/AppContext";
+import { Store, Phone, ArrowRight, Printer, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import {
+  Box,
+  Button,
+  Flex,
+  Heading,
+  Input,
+  Spinner,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
+import { Field } from "@/components/ui/field";
+
+const BG = "#0a0b10";
+const BORDER = "rgba(255,255,255,0.06)";
+const PRIMARY = "#5b9cf5";
+const DIM = "#5c6478";
 
 export default function OnboardingPage() {
   const { setLoja, loja } = useApp();
   const router = useRouter();
-  const [nome, setNome] = useState('');
-  const [telefone, setTelefone] = useState('');
+  const [nome, setNome] = useState("");
+  const [telefone, setTelefone] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,8 +40,7 @@ export default function OnboardingPage() {
         nome: nome.trim(),
         telefone: telefone.trim(),
       });
-      // After success, redirect to pedido
-      router.push('/pedido');
+      router.push("/pedido");
     } catch (err) {
       console.error(err);
     } finally {
@@ -36,92 +50,220 @@ export default function OnboardingPage() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/login');
+    router.push("/login");
   };
 
   return (
-    <div className="app-page-gutter min-h-dvh bg-bg flex items-center justify-center py-8 sm:py-12 relative overflow-hidden">
-      {/* Background Orbs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
+    <Flex
+      minH="100dvh"
+      bg={BG}
+      align="center"
+      justify="center"
+      py={{ base: "8", sm: "12" }}
+      position="relative"
+      overflow="hidden"
+      pl={{ base: "max(1.5rem, env(safe-area-inset-left, 0px))", md: "max(2rem, env(safe-area-inset-left, 0px))" }}
+      pr={{ base: "max(1.5rem, env(safe-area-inset-right, 0px))", md: "max(2rem, env(safe-area-inset-right, 0px))" }}
+    >
+      <Box
+        position="absolute"
+        top="-10%"
+        left="-10%"
+        w="40%"
+        h="40%"
+        bg={`${PRIMARY}33`}
+        rounded="full"
+        filter="blur(120px)"
+        pointerEvents="none"
+      />
+      <Box
+        position="absolute"
+        bottom="-10%"
+        right="-10%"
+        w="40%"
+        h="40%"
+        bg={`${PRIMARY}1a`}
+        rounded="full"
+        filter="blur(120px)"
+        pointerEvents="none"
+      />
 
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-lg relative z-10"
-      >
-        <div className="flex flex-col items-center mb-10">
-          <div className="w-16 h-16 bg-surface border border-border rounded-2xl flex items-center justify-center mb-6 shadow-2xl relative overflow-hidden group">
-            <div className="absolute inset-0 bg-primary/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
-            <Printer size={32} className="text-primary relative z-10" />
-          </div>
-          <h1 className="text-3xl font-black text-white uppercase tracking-tighter mb-2">
-            Bem-vindo ao <span className="text-primary italic">Bubina</span>
-          </h1>
-          <p className="text-text-dim font-bold text-center text-sm uppercase tracking-[0.2em]">
+      <Box w="full" maxW="lg" position="relative" zIndex={1}>
+        <VStack mb="10" align="center">
+          <Box
+            w="16"
+            h="16"
+            bg="#14161e"
+            borderWidth="1px"
+            borderColor={BORDER}
+            rounded="2xl"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            mb="6"
+            boxShadow="2xl"
+            position="relative"
+            overflow="hidden"
+          >
+            <Printer size={32} color={PRIMARY} style={{ position: "relative", zIndex: 1 }} />
+          </Box>
+          <Heading
+            as="h1"
+            fontSize="3xl"
+            fontWeight="black"
+            color="white"
+            textTransform="uppercase"
+            letterSpacing="tighter"
+            mb="2"
+            textAlign="center"
+          >
+            Bem-vindo ao{" "}
+            <Text as="span" color={PRIMARY} fontStyle="italic">
+              Bubina
+            </Text>
+          </Heading>
+          <Text
+            color={DIM}
+            fontWeight="bold"
+            textAlign="center"
+            fontSize="sm"
+            textTransform="uppercase"
+            letterSpacing="0.2em"
+          >
             Configuração do seu negócio
-          </p>
-        </div>
+          </Text>
+        </VStack>
 
-        <div className="solid-card p-8 sm:p-12 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] border-primary/20">
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-[10px] font-black text-text-dim uppercase tracking-[0.3em] px-1">
-                <Store size={14} className="text-primary" /> Nome do Estabelecimento
-              </label>
-              <input 
-                required
-                className="w-full bg-bg border border-border rounded-xl px-5 py-4 text-sm font-bold text-white focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-text-dim/20" 
-                value={nome}
-                onChange={e => setNome(e.target.value)}
-                placeholder="Ex: Pizzaria do Vale"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-[10px] font-black text-text-dim uppercase tracking-[0.3em] px-1">
-                <Phone size={14} className="text-primary" /> Telefone de Contato
-              </label>
-              <input 
-                required
-                className="w-full bg-bg border border-border rounded-xl px-5 py-4 text-sm font-bold text-white focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-text-dim/20" 
-                value={telefone}
-                onChange={e => setTelefone(e.target.value)}
-                placeholder="(00) 00000-0000"
-              />
-            </div>
-
-            <div className="space-y-4 pt-4">
-              <button 
-                disabled={isSubmitting || !nome.trim() || !telefone.trim()}
-                className="btn-primary w-full h-16 flex items-center justify-center gap-4 text-xs font-black uppercase tracking-[0.3em] shadow-xl disabled:opacity-50 group"
+        <Box
+          rounded="xl"
+          p={{ base: "8", sm: "12" }}
+          borderWidth="1px"
+          borderColor={`${PRIMARY}33`}
+          bg="#14161e"
+          boxShadow="0 30px 60px -15px rgba(0,0,0,0.5)"
+        >
+          <form onSubmit={handleSubmit}>
+            <VStack gap="8" align="stretch">
+              <Field
+                label={
+                  <Flex align="center" gap="2" fontSize="10px" fontWeight="black" color={DIM} textTransform="uppercase" letterSpacing="0.3em">
+                    <Store size={14} color={PRIMARY} />
+                    Nome do estabelecimento
+                  </Flex>
+                }
               >
-                {isSubmitting ? (
-                  <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <span>COMEÇAR A VENDER</span>
-                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </button>
+                <Input
+                  required
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  placeholder="Ex: Pizzaria do Vale"
+                  w="full"
+                  bg={BG}
+                  borderWidth="1px"
+                  borderColor={BORDER}
+                  rounded="xl"
+                  px="5"
+                  py="4"
+                  fontSize="sm"
+                  fontWeight="bold"
+                  color="white"
+                  _placeholder={{ color: "rgba(92,100,120,0.35)" }}
+                  _focus={{ borderColor: PRIMARY, boxShadow: `0 0 0 1px ${PRIMARY}33` }}
+                />
+              </Field>
 
-              <button 
-                type="button"
-                onClick={handleLogout}
-                className="w-full h-12 flex items-center justify-center gap-2 text-[10px] font-black text-text-dim hover:text-white uppercase tracking-widest transition-all"
+              <Field
+                label={
+                  <Flex align="center" gap="2" fontSize="10px" fontWeight="black" color={DIM} textTransform="uppercase" letterSpacing="0.3em">
+                    <Phone size={14} color={PRIMARY} />
+                    Telefone de contato
+                  </Flex>
+                }
               >
-                <LogOut size={14} />
-                SAIR DA CONTA
-              </button>
-            </div>
+                <Input
+                  required
+                  value={telefone}
+                  onChange={(e) => setTelefone(e.target.value)}
+                  placeholder="(00) 00000-0000"
+                  w="full"
+                  bg={BG}
+                  borderWidth="1px"
+                  borderColor={BORDER}
+                  rounded="xl"
+                  px="5"
+                  py="4"
+                  fontSize="sm"
+                  fontWeight="bold"
+                  color="white"
+                  _placeholder={{ color: "rgba(92,100,120,0.35)" }}
+                  _focus={{ borderColor: PRIMARY, boxShadow: `0 0 0 1px ${PRIMARY}33` }}
+                />
+              </Field>
+
+              <VStack gap="4" align="stretch" pt="4">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !nome.trim() || !telefone.trim()}
+                  w="full"
+                  h="16"
+                  rounded="xl"
+                  bg={PRIMARY}
+                  color="white"
+                  fontSize="xs"
+                  fontWeight="black"
+                  textTransform="uppercase"
+                  letterSpacing="0.3em"
+                  boxShadow="xl"
+                  gap="4"
+                  _hover={{ filter: "brightness(1.08)" }}
+                  _disabled={{ opacity: 0.5 }}
+                >
+                  {isSubmitting ? (
+                    <Spinner size="sm" color="white" />
+                  ) : (
+                    <>
+                      Começar a vender
+                      <ArrowRight size={18} />
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={handleLogout}
+                  w="full"
+                  h="12"
+                  fontSize="10px"
+                  fontWeight="black"
+                  color={DIM}
+                  textTransform="uppercase"
+                  letterSpacing="widest"
+                  _hover={{ color: "white" }}
+                >
+                  <LogOut size={14} style={{ marginRight: "0.5rem" }} />
+                  Sair da conta
+                </Button>
+              </VStack>
+            </VStack>
           </form>
-        </div>
+        </Box>
 
-        <p className="mt-10 text-center text-[9px] font-black text-text-dim uppercase tracking-widest leading-relaxed">
-          Ao prosseguir, você concorda que o <span className="text-white">Bubina</span> processe seus dados com segurança na nuvem.
-        </p>
-      </motion.div>
-    </div>
+        <Text
+          mt="10"
+          textAlign="center"
+          fontSize="9px"
+          fontWeight="black"
+          color={DIM}
+          textTransform="uppercase"
+          letterSpacing="widest"
+          lineHeight="relaxed"
+        >
+          Ao prosseguir, você concorda que o <Text as="span" color="white">Bubina</Text> processe seus dados com
+          segurança na nuvem.
+        </Text>
+      </Box>
+    </Flex>
   );
 }
+

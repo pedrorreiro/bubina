@@ -1,7 +1,6 @@
+/** Sem Tailwind: Next.js pode usar este arquivo vazio ou sem plugins. */
 const postcssConfig = {
-  plugins: {
-    "@tailwindcss/postcss": {},
-  },
+  plugins: {},
 };
 
 export default postcssConfig;

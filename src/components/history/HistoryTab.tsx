@@ -30,6 +30,7 @@ import {
   Stack,
   Spinner,
 } from "@chakra-ui/react";
+import { appPanelProps } from "@/theme/layout";
 
 function historicoParaPedido(v: HistoricoPedido): Pedido {
   return {
@@ -147,7 +148,7 @@ export function HistoryTab() {
 
   return (
     <VStack align="stretch" gap={{ base: 4, md: 5 }} w="full" pb={{ base: 1, md: 0 }}>
-      <Box className="app-panel" overflow="hidden">
+      <Box {...appPanelProps} overflow="hidden">
         <Flex
           direction={{ base: "column", sm: "row" }}
           align={{ base: "stretch", sm: "center" }}
@@ -203,7 +204,7 @@ export function HistoryTab() {
 
       <Stack gap={{ base: 3, md: 3 }}>
         {historico.length === 0 ? (
-          <Box className="app-panel" p={{ base: 6, md: 6 }}>
+          <Box {...appPanelProps} p={{ base: 6, md: 6 }}>
             <Center
               flexDir="column"
               py={{ base: 12, md: 16 }}
@@ -237,7 +238,7 @@ export function HistoryTab() {
           historico.map((venda) => (
             <Box
               key={venda.id}
-              className="app-panel"
+              {...appPanelProps}
               overflow="hidden"
               onClick={() => handleReabrir(venda)}
               role="button"

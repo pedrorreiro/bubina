@@ -15,6 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
+import { appPanelProps } from "@/theme/layout";
 
 export function StoreOnboarding() {
   const { setLoja, loja } = useApp();
@@ -118,7 +119,7 @@ export function StoreOnboarding() {
         </VStack>
 
         <Box
-          className="app-panel"
+          {...appPanelProps}
           bg="transparent"
           borderWidth="0"
           shadow="none"

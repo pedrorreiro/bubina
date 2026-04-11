@@ -35,6 +35,12 @@ import {
   MenuTrigger,
 } from "@/components/ui/menu";
 import { Button } from "@/components/ui/button";
+import {
+  appHeaderProps,
+  appNavMobileProps,
+  appPanelProps,
+  safeGutterX,
+} from "@/theme/layout";
 
 export function Header() {
   const {
@@ -102,20 +108,12 @@ export function Header() {
 
   return (
     <>
-      <Box
-        as="header"
-        className="app-header"
-        w="full"
-        h="16"
-        bg="transparent"
-        borderBottomWidth="0"
-      >
+      <Box as="header" w="full" h="16" {...appHeaderProps}>
         <Flex
           h="full"
           align="center"
           justify="space-between"
-          className="app-page-gutter"
-          px={{ base: "6", md: "8" }}
+          {...safeGutterX}
           maxW="7xl"
           mx="auto"
         >
@@ -216,7 +214,7 @@ export function Header() {
                   </IconButton>
                 </MenuTrigger>
                 <MenuContent
-                  className="app-panel"
+                  {...appPanelProps}
                   p="2"
                   borderRadius="xl"
                   boxShadow="lg"
@@ -315,7 +313,7 @@ export function Header() {
                 </IconButton>
               </MenuTrigger>
               <MenuContent
-                className="app-panel"
+                {...appPanelProps}
                 p="5"
                 borderRadius="2xl"
                 minW="280px"
@@ -413,8 +411,8 @@ export function Header() {
       {/* Mobile Bottom Navigation */}
       <Box
         as="nav"
-        className="app-nav-mobile app-page-gutter"
-        px={{ base: "6", md: "8" }}
+        {...appNavMobileProps}
+        {...safeGutterX}
         position="fixed"
         bottom="0"
         left="0"

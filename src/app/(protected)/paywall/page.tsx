@@ -12,8 +12,21 @@ import {
   Check,
 } from "lucide-react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { toast } from "sonner";
+import {
+  Box,
+  Flex,
+  Grid,
+  Heading,
+  SimpleGrid,
+  Table,
+  Text,
+} from "@chakra-ui/react";
+
+const BG = "#020305";
+const PRIMARY = "#5b9cf5";
+const DIM = "#5c6478";
+const MUTED = "#8f98ad";
 
 export default function PaywallPage() {
   const { createCheckout } = useSubscription();
@@ -22,7 +35,7 @@ export default function PaywallPage() {
   const handleCheckout = async (priceType: "monthly" | "annual") => {
     setLoading(priceType);
     const toastId = toast.loading("Preparando checkout seguro...");
-    
+
     try {
       const { url } = await createCheckout(priceType);
       if (url) {
@@ -39,97 +52,113 @@ export default function PaywallPage() {
   };
 
   const COMPARISON_FEATURES = [
-    {
-      label: "Limite de Impressões",
-      free: "15 por dia",
-      pro: "Ilimitado",
-    },
-    {
-      label: "Catálogo de Itens",
-      free: "-",
-      pro: "Ilimitado",
-    },
-    {
-      label: "Logomarca no Cupom",
-      free: "-",
-      pro: "Sua logomarca",
-    },
-    {
-      label: "Rodapé Personalizado",
-      free: "Padrão",
-      pro: "Remova ou Altere",
-    },
-    {
-      label: "Vendas Manuais",
-      free: "Liberado",
-      pro: "Liberado",
-    },
-    {
-      label: "Suporte Técnico",
-      free: "-",
-      pro: "Chat Prioritário",
-    },
-    {
-      label: "Histórico de Pedidos",
-      free: "-",
-      pro: "Ilimitado",
-    },
+    { label: "Limite de Impressões", free: "15 por dia", pro: "Ilimitado" },
+    { label: "Catálogo de Itens", free: "-", pro: "Ilimitado" },
+    { label: "Logomarca no Cupom", free: "-", pro: "Sua logomarca" },
+    { label: "Rodapé Personalizado", free: "Padrão", pro: "Remova ou Altere" },
+    { label: "Vendas Manuais", free: "Liberado", pro: "Liberado" },
+    { label: "Suporte Técnico", free: "-", pro: "Chat Prioritário" },
+    { label: "Histórico de Pedidos", free: "-", pro: "Ilimitado" },
   ];
 
   return (
-    <div className="app-page-gutter min-h-dvh flex flex-col items-center bg-[#020305] py-12 md:py-20 relative overflow-x-hidden">
-      {/* Background Decor - Cinematic Mesh */}
-      <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[140px] pointer-events-none animate-pulse duration-[10s]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,rgba(59,130,246,0.03),transparent_70%)] pointer-events-none" />
+    <Flex
+      minH="100dvh"
+      flexDirection="column"
+      align="center"
+      bg={BG}
+      py={{ base: "12", md: "20" }}
+      position="relative"
+      overflowX="hidden"
+      pl={{ base: "max(1.5rem, env(safe-area-inset-left, 0px))", md: "max(2rem, env(safe-area-inset-left, 0px))" }}
+      pr={{ base: "max(1.5rem, env(safe-area-inset-right, 0px))", md: "max(2rem, env(safe-area-inset-right, 0px))" }}
+    >
+      <Box
+        position="absolute"
+        top="-20%"
+        left="-10%"
+        w="60%"
+        h="60%"
+        bg={`${PRIMARY}1a`}
+        rounded="full"
+        filter="blur(140px)"
+        pointerEvents="none"
+        animation="pulse 10s infinite"
+      />
+      <Box
+        position="absolute"
+        bottom="-10%"
+        right="-10%"
+        w="50%"
+        h="50%"
+        bg={`${PRIMARY}0d`}
+        rounded="full"
+        filter="blur(140px)"
+        pointerEvents="none"
+      />
+      <Box
+        position="absolute"
+        inset={0}
+        pointerEvents="none"
+        bgImage="radial-gradient(circle at 50% 10%, rgba(59,130,246,0.03), transparent 70%)"
+      />
 
-      <div className="relative z-10 w-full max-w-5xl">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full mb-8 backdrop-blur-xl"
+      <Box position="relative" zIndex={1} w="full" maxW="5xl">
+        <Box textAlign="center" mb="16">
+          <Flex
+            display="inline-flex"
+            align="center"
+            gap="2"
+            px="4"
+            py="1.5"
+            bg="rgba(255,255,255,0.05)"
+            borderWidth="1px"
+            borderColor="rgba(255,255,255,0.1)"
+            rounded="full"
+            mb="8"
+            backdropFilter="blur(24px)"
           >
-            <Zap size={14} className="text-primary" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-text-dim">
-              Explore o Próximo Nível
-            </span>
-          </motion.div>
+            <Zap size={14} color={PRIMARY} />
+            <Text fontSize="10px" fontWeight="bold" textTransform="uppercase" letterSpacing="0.3em" color={DIM}>
+              Explore o próximo nível
+            </Text>
+          </Flex>
 
-          <h1 className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-6">
-            Eleve sua Operação com o{" "}
-            <span className="text-primary italic">Pro</span>
-          </h1>
+          <Heading
+            as="h1"
+            fontSize={{ base: "2xl", md: "5xl" }}
+            fontWeight="bold"
+            color="white"
+            letterSpacing="tight"
+            mb="6"
+          >
+            Eleve sua operação com o{" "}
+            <Text as="span" color={PRIMARY} fontStyle="italic">
+              Pro
+            </Text>
+          </Heading>
 
-          <p className="text-sm md:text-base text-text-dim max-w-xl mx-auto leading-relaxed">
-            Abandone os limites do plano gratuito e desbloqueie ferramentas
-            profissionais de alta performance desenhadas para o seu crescimento.
-          </p>
-        </div>
+          <Text fontSize={{ base: "sm", md: "md" }} color={DIM} maxW="xl" mx="auto" lineHeight="relaxed">
+            Abandone os limites do plano gratuito e desbloqueie ferramentas profissionais.
+          </Text>
+        </Box>
 
-        {/* Plans Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16 max-w-4xl mx-auto">
+        <SimpleGrid columns={{ base: 1, md: 2 }} gap="8" mb="16" maxW="4xl" mx="auto">
           <PlanCard
             title="Assinatura Mensal"
             price="R$ 20"
             period="/mês"
-            description="Flexibilidade total para o seu dia a dia. Desbloqueie o potencial máximo."
-            features={[
-              "Logomarca no Cupom",
-              "Rodapé Personalizado",
-              "Histórico Completo",
-            ]}
+            description="Flexibilidade total para o seu dia a dia."
+            features={["Logomarca no Cupom", "Rodapé Personalizado", "Histórico Completo"]}
             onSelect={() => handleCheckout("monthly")}
             loading={loading === "monthly"}
             disabled={loading !== null}
           />
-
           <PlanCard
             title="Assinatura Anual"
             price="R$ 200"
             period="/ano"
-            description="O máximo de economia para negócios consolidados. Pagamento único."
+            description="Economia para negócios consolidados. Pagamento único."
             badge="17% DE ECONOMIA"
             features={[
               "Tudo do plano Mensal",
@@ -142,154 +171,175 @@ export default function PaywallPage() {
             loading={loading === "annual"}
             disabled={loading !== null}
           />
-        </div>
+        </SimpleGrid>
 
-        {/* Trust badges */}
-        <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 text-text-muted mb-24 opacity-60">
-          <div className="flex items-center gap-3">
-            <Shield size={18} className="text-primary" />
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em]">
-              Checkout Seguro Stripe
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Zap size={18} className="text-primary" />
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em]">
-              Ativação Instantânea
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <CheckCircle2 size={18} className="text-primary" />
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em]">
-              Sem Multas de Cancelamento
-            </span>
-          </div>
-        </div>
+        <Flex
+          flexWrap="wrap"
+          align="center"
+          justify="center"
+          gapX="12"
+          gapY="6"
+          color={MUTED}
+          mb="24"
+          opacity={0.6}
+        >
+          <Flex align="center" gap="3">
+            <Shield size={18} color={PRIMARY} />
+            <Text fontSize="11px" fontWeight="bold" textTransform="uppercase" letterSpacing="0.2em">
+              Checkout seguro Stripe
+            </Text>
+          </Flex>
+          <Flex align="center" gap="3">
+            <Zap size={18} color={PRIMARY} />
+            <Text fontSize="11px" fontWeight="bold" textTransform="uppercase" letterSpacing="0.2em">
+              Ativação instantânea
+            </Text>
+          </Flex>
+          <Flex align="center" gap="3">
+            <CheckCircle2 size={18} color={PRIMARY} />
+            <Text fontSize="11px" fontWeight="bold" textTransform="uppercase" letterSpacing="0.2em">
+              Sem multas de cancelamento
+            </Text>
+          </Flex>
+        </Flex>
 
-        {/* Plan Comparison Table */}
-        <div className="glass-panel overflow-hidden border-white/[0.05] shadow-2xl mb-12">
-          <div className="p-8 md:p-12 border-b border-white/[0.05] bg-white/[0.01]">
-            <div className="text-center">
-              <h3 className="text-xs font-bold text-primary uppercase tracking-[0.4em] mb-3">
-                Visão Detalhada
-              </h3>
-              <p className="text-xl font-bold text-white tracking-tight">
-                Compare as Versões
-              </p>
-            </div>
-          </div>
+        <Box
+          overflow="hidden"
+          borderWidth="1px"
+          borderColor="rgba(255,255,255,0.05)"
+          rounded="2xl"
+          boxShadow="2xl"
+          mb="12"
+          bg="rgba(20,22,30,0.7)"
+          backdropFilter="blur(14px)"
+        >
+          <Box p={{ base: "6", md: "12" }} borderBottomWidth="1px" borderColor="rgba(255,255,255,0.05)" bg="rgba(255,255,255,0.01)">
+            <Box textAlign="center">
+              <Text fontSize="xs" fontWeight="bold" color={PRIMARY} textTransform="uppercase" letterSpacing="0.4em" mb="3">
+                Visão detalhada
+              </Text>
+              <Text fontSize="xl" fontWeight="bold" color="white" letterSpacing="tight">
+                Compare as versões
+              </Text>
+            </Box>
+          </Box>
 
-          <div className="p-2 md:p-8">
-            {/* Desktop Table View */}
-            <div className="hidden md:block overflow-x-auto custom-scrollbar">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-white/5">
-                    <th className="px-6 py-6 text-left text-[11px] font-bold text-text-dim uppercase tracking-widest">
+          <Box p={{ base: "2", md: "8" }}>
+            <Box display={{ base: "none", md: "block" }} overflowX="auto">
+              <Table.Root native size="sm" variant="line" minW="full">
+                <Table.Header>
+                  <Table.Row borderBottomWidth="1px" borderColor="rgba(255,255,255,0.05)">
+                    <Table.ColumnHeader px="6" py="6" textAlign="left" fontSize="11px" fontWeight="bold" color={DIM} textTransform="uppercase" letterSpacing="widest">
                       Funcionalidade
-                    </th>
-                    <th className="px-6 py-6 text-center text-[11px] font-bold text-text-dim uppercase tracking-widest">
+                    </Table.ColumnHeader>
+                    <Table.ColumnHeader px="6" py="6" textAlign="center" fontSize="11px" fontWeight="bold" color={DIM} textTransform="uppercase" letterSpacing="widest">
                       Free
-                    </th>
-                    <th className="px-6 py-6 text-center text-[11px] font-bold text-primary uppercase tracking-widest">
+                    </Table.ColumnHeader>
+                    <Table.ColumnHeader px="6" py="6" textAlign="center" fontSize="11px" fontWeight="bold" color={PRIMARY} textTransform="uppercase" letterSpacing="widest">
                       Premium
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/2">
+                    </Table.ColumnHeader>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
                   {COMPARISON_FEATURES.map((row, i) => (
-                    <tr
+                    <Table.Row
                       key={i}
-                      className="hover:bg-white/[0.01] transition-colors group"
+                      borderBottomWidth="1px"
+                      borderColor="rgba(255,255,255,0.04)"
+                      _hover={{ bg: "rgba(255,255,255,0.01)" }}
                     >
-                      <td className="px-6 py-6">
-                        <span className="text-sm font-semibold text-white group-hover:text-primary transition-colors">
+                      <Table.Cell px="6" py="6">
+                        <Text fontSize="sm" fontWeight="semibold" color="white">
                           {row.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-6 text-center">
-                        <span className="text-xs font-medium text-text-dim/50">
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell px="6" py="6" textAlign="center">
+                        <Text fontSize="xs" fontWeight="medium" color={`${DIM}80`}>
                           {row.free}
-                        </span>
-                      </td>
-                      <td className="px-6 py-6 text-center">
-                        <span className="text-sm font-bold text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell px="6" py="6" textAlign="center">
+                        <Text fontSize="sm" fontWeight="bold" color={PRIMARY}>
                           {row.pro}
-                        </span>
-                      </td>
-                    </tr>
+                        </Text>
+                      </Table.Cell>
+                    </Table.Row>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </Table.Body>
+              </Table.Root>
+            </Box>
 
-            {/* Minimalist Mobile Table View */}
-            <div className="md:hidden">
-              <div className="grid grid-cols-[1.5fr_1fr_1fr] border-b border-white/10 pb-4 mb-2 px-2">
-                <span className="text-[10px] font-bold text-text-dim uppercase tracking-widest pl-2">
+            <Box display={{ base: "block", md: "none" }}>
+              <Grid templateColumns="1.5fr 1fr 1fr" borderBottomWidth="1px" borderColor="rgba(255,255,255,0.1)" pb="4" mb="2" px="2">
+                <Text fontSize="10px" fontWeight="bold" color={DIM} textTransform="uppercase" letterSpacing="widest" pl="2">
                   Recurso
-                </span>
-                <span className="text-[10px] font-bold text-text-dim/40 uppercase tracking-widest text-center">
+                </Text>
+                <Text fontSize="10px" fontWeight="bold" color={`${DIM}66`} textTransform="uppercase" letterSpacing="widest" textAlign="center">
                   Free
-                </span>
-                <span className="text-[10px] font-bold text-primary uppercase tracking-widest text-center">
+                </Text>
+                <Text fontSize="10px" fontWeight="bold" color={PRIMARY} textTransform="uppercase" letterSpacing="widest" textAlign="center">
                   Pro
-                </span>
-              </div>
-
-              <div className="space-y-1">
+                </Text>
+              </Grid>
+              <Flex direction="column" gap="1">
                 {COMPARISON_FEATURES.map((row, i) => (
-                  <div
+                  <Grid
                     key={i}
-                    className={`grid grid-cols-[1.5fr_1fr_1fr] items-center py-4 px-2 rounded-xl ${i % 2 === 0 ? "bg-white/[0.02]" : ""}`}
+                    templateColumns="1.5fr 1fr 1fr"
+                    alignItems="center"
+                    py="4"
+                    px="2"
+                    rounded="xl"
+                    bg={i % 2 === 0 ? "rgba(255,255,255,0.02)" : undefined}
                   >
-                    <span className="text-[11px] font-medium text-white/80 pl-2 leading-tight">
+                    <Text fontSize="11px" fontWeight="medium" color="rgba(255,255,255,0.8)" pl="2" lineHeight="tight">
                       {row.label}
-                    </span>
-                    <div className="flex justify-center">
+                    </Text>
+                    <Flex justify="center">
                       {row.free === "-" ? (
-                        <X size={12} className="text-text-dim/20" />
-                      ) : row.free === "Liberado" ||
-                        row.free === "Automático" ? (
-                        <Check size={12} className="text-text-dim/40" />
+                        <X size={12} color={`${DIM}33`} />
+                      ) : row.free === "Liberado" || row.free === "Automático" ? (
+                        <Check size={12} color={`${DIM}66`} />
                       ) : (
-                        <span className="text-[9px] font-medium text-text-dim/40 text-center leading-none px-1">
+                        <Text fontSize="9px" fontWeight="medium" color={`${DIM}66`} textAlign="center" lineHeight="none" px="1">
                           {row.free.replace(" por dia", "/d")}
-                        </span>
+                        </Text>
                       )}
-                    </div>
-                    <div className="flex justify-center">
+                    </Flex>
+                    <Flex justify="center">
                       {row.pro === "Liberado" || row.pro === "Automático" ? (
-                        <Check size={14} className="text-primary" />
+                        <Check size={14} color={PRIMARY} />
                       ) : (
-                        <span className="text-[10px] font-bold text-primary text-center leading-none px-1 drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">
-                          {row.pro === "Automático + Histórico Ilimitado"
-                            ? "Auto + Hist."
-                            : row.pro}
-                        </span>
+                        <Text fontSize="10px" fontWeight="bold" color={PRIMARY} textAlign="center" lineHeight="none" px="1">
+                          {row.pro === "Automático + Histórico Ilimitado" ? "Auto + Hist." : row.pro}
+                        </Text>
                       )}
-                    </div>
-                  </div>
+                    </Flex>
+                  </Grid>
                 ))}
-              </div>
-            </div>
-          </div>
-        </div>
+              </Flex>
+            </Box>
+          </Box>
+        </Box>
 
-        {/* Secondary Back Link */}
-        <div className="text-center pt-8">
+        <Box textAlign="center" pt="8">
           <Link
             href="/"
-            className="group inline-flex items-center gap-3 text-text-dim hover:text-white transition-all text-sm font-bold"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.75rem",
+              color: DIM,
+              fontSize: "0.875rem",
+              fontWeight: 700,
+              textDecoration: "none",
+            }}
           >
-            <ArrowLeft
-              size={18}
-              className="transition-transform group-hover:-translate-x-1"
-            />
-            Voltar ao Painel
+            <ArrowLeft size={18} />
+            Voltar ao painel
           </Link>
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Flex>
   );
 }

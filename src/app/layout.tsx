@@ -17,8 +17,9 @@ const jbm = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bubina | PDV Inteligente",
-  description: "O sistema de vendas mais rápido para sua impressora térmica",
+  title: "Bubina — PDV Inteligente para Impressoras Térmicas",
+  description:
+    "Imprima cupons direto do celular via Bluetooth. Sem fio, sem complicação.",
 };
 
 export const viewport: Viewport = {
@@ -36,9 +37,7 @@ export default function RootLayout({
 }) {
   return (
     <html suppressHydrationWarning lang="pt-BR">
-      <body
-        className={`${pjs.variable} ${jbm.variable} font-sans antialiased bg-bg text-text min-h-dvh w-full`}
-      >
+      <body className={`${pjs.variable} ${jbm.variable}`}>
         <Provider>
           <Toaster
             position="bottom-right"

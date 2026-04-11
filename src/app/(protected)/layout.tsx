@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "@/services/session";
 
+export const dynamic = "force-dynamic";
+
 export default async function ProtectedLayout({
   children,
 }: {
