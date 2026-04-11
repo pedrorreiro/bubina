@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase-server";
+import { SubscriptionService } from "@/services/subscription";
 import { NextRequest, NextResponse } from "next/server";
-import { getSubscription } from "../auth/subscription/subscription-logic";
 
 export async function GET() {
   const supabase = await createClient();
@@ -52,7 +52,10 @@ export async function POST(req: NextRequest) {
     loja.mensagem_rodape !== currentLoja?.mensagem_rodape;
 
   if (isChangingLogo || isChangingRodape) {
-    const subscription = await getSubscription(supabase, user.id);
+    const subscription = await SubscriptionService.getSubscription(
+      supabase,
+      user.id,
+    );
     if (!subscription.active) {
       const field = isChangingLogo ? "logomarca" : "mensagem de rodapé";
       return NextResponse.json(

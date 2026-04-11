@@ -2,7 +2,7 @@ import { stripe, PRICES } from "@/lib/stripe";
 import { SupabaseClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 
-export interface SubscriptionStatus {
+export interface Subscription {
   active: boolean;
   reason: "no_store" | "manual" | "trial" | "paid" | "expired";
   trialEndsAt: string | null;
@@ -11,14 +11,33 @@ export interface SubscriptionStatus {
   isCanceling: boolean;
 }
 
+export interface AppFeatures {
+  canShowLogo: boolean;
+  unlimitedPrints: boolean;
+  customFooter: boolean;
+  prioritySupport: boolean;
+}
+
 export class SubscriptionService {
+  /**
+   * Converte o status da assinatura em flags de funcionalidades.
+   */
+  static getFeatures(status: Subscription): AppFeatures {
+    const isPremium = status.active;
+    return {
+      canShowLogo: isPremium,
+      unlimitedPrints: isPremium,
+      customFooter: isPremium,
+      prioritySupport: status.reason === "paid", // Apenas para quem paga (não trial)
+    };
+  }
   /**
    * ÚNICA fonte de verdade para buscar e calcular o status de uma assinatura.
    */
-  static async getSubscriptionStatus(
+  static async getSubscription(
     supabase: SupabaseClient,
     userId: string,
-  ): Promise<SubscriptionStatus> {
+  ): Promise<Subscription> {
     const { data: loja, error: dbError } = await supabase
       .from("lojas")
       .select(
@@ -44,7 +63,7 @@ export class SubscriptionService {
   /**
    * Lógica pura de cálculo de acesso baseada nos dados da loja.
    */
-  private static calculateAccess(loja: any): SubscriptionStatus {
+  private static calculateAccess(loja: any): Subscription {
     // 1. Check for manual override (Lifetime/Manual access)
     if (loja.is_premium) {
       return {
@@ -188,7 +207,10 @@ export class SubscriptionService {
             .eq("id", lojaId);
 
           if (updateError) {
-            console.error("❌ [Service] Erro ao atualizar banco:", updateError.message);
+            console.error(
+              "❌ [Service] Erro ao atualizar banco:",
+              updateError.message,
+            );
             console.error("❌ [Service] Detalhes do erro:", updateError);
           } else {
             console.log("✅ [Service] Banco atualizado com sucesso!");
@@ -215,7 +237,10 @@ export class SubscriptionService {
           .eq("stripe_customer_id", customerId);
 
         if (updateError) {
-          console.error("❌ [Service] Erro ao atualizar assinatura:", updateError.message);
+          console.error(
+            "❌ [Service] Erro ao atualizar assinatura:",
+            updateError.message,
+          );
         }
         break;
       }
@@ -235,7 +260,10 @@ export class SubscriptionService {
           .eq("stripe_customer_id", customerId);
 
         if (updateError) {
-          console.error("❌ [Service] Erro ao deletar assinatura:", updateError.message);
+          console.error(
+            "❌ [Service] Erro ao deletar assinatura:",
+            updateError.message,
+          );
         }
         break;
       }
@@ -249,7 +277,10 @@ export class SubscriptionService {
           .eq("stripe_customer_id", customerId);
 
         if (updateError) {
-          console.error("❌ [Service] Erro ao marcar falha de pagamento:", updateError.message);
+          console.error(
+            "❌ [Service] Erro ao marcar falha de pagamento:",
+            updateError.message,
+          );
         }
         break;
       }

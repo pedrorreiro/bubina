@@ -10,9 +10,16 @@
  */
 
 import {
-  CMD_INIT, CMD_ALIGN_L, CMD_ALIGN_C, CMD_ALIGN_R, CMD_FEED4,
-  encodeText, encodeQR, encodeImage, concatBuffers,
-} from './escpos';
+  CMD_INIT,
+  CMD_ALIGN_L,
+  CMD_ALIGN_C,
+  CMD_ALIGN_R,
+  CMD_FEED4,
+  encodeText,
+  encodeQR,
+  encodeImage,
+  concatBuffers,
+} from "./escpos";
 
 // ── Web Bluetooth type declarations ──────────────────────────────────────────
 
@@ -60,7 +67,7 @@ declare global {
 
 export class BluetoothPrinter {
   private buffers: Uint8Array[] = [];
-  private align: 'left' | 'center' | 'right' = 'left';
+  private align: "left" | "center" | "right" = "left";
   private device: BluetoothDevice;
 
   private constructor(device: BluetoothDevice) {
@@ -72,27 +79,30 @@ export class BluetoothPrinter {
   /** Opens the Chrome device picker and builds a BluetoothPrinter instance. */
   static async connect(): Promise<BluetoothPrinter> {
     if (!navigator.bluetooth) {
-      throw new Error('Web Bluetooth não suportado. Use o Chrome ou Edge no desktop/Android.');
+      const isIOS =
+        /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+        (navigator.userAgent.includes("Mac") && navigator.maxTouchPoints > 1);
+
+      if (isIOS) {
+        throw new Error(
+          "O iPhone/iPad não suporta impressão via Bluetooth neste navegador. Por favor, use o navegador gratuito 'Bluefy' ou o 'WebBLE' para imprimir.",
+        );
+      }
+
+      throw new Error(
+        "Web Bluetooth não suportado neste navegador. No Desktop ou Android, utilize o Google Chrome ou Microsoft Edge.",
+      );
     }
     const device = await navigator.bluetooth.requestDevice({
-      filters: [
-        { services: ['00001910-0000-1000-8000-00805f9b34fb'] }, // TY
-        { services: ['000018f0-0000-1000-8000-00805f9b34fb'] },
-        { services: ['e7810a71-73ae-499d-8c15-faa9aef0c3f2'] },
-        { services: ['49535343-fe7d-4ae5-8fa9-9fafd205e455'] },
-        { services: ['0000fee7-0000-1000-8000-00805f9b34fb'] },
-        { services: ['0000e781-0000-1000-8000-00805f9b34fb'] },
-        { services: ['0000ff00-0000-1000-8000-00805f9b34fb'] },
-      ],
-      // Mantendo como opcional também por segurança
+      acceptAllDevices: true,
       optionalServices: [
-        '00001910-0000-1000-8000-00805f9b34fb',
-        '000018f0-0000-1000-8000-00805f9b34fb',
-        'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
-        '49535343-fe7d-4ae5-8fa9-9fafd205e455',
-        '0000fee7-0000-1000-8000-00805f9b34fb',
-        '0000e781-0000-1000-8000-00805f9b34fb',
-        '0000ff00-0000-1000-8000-00805f9b34fb',
+        "00001910-0000-1000-8000-00805f9b34fb", // TY
+        "000018f0-0000-1000-8000-00805f9b34fb", // Generic
+        "e7810a71-73ae-499d-8c15-faa9aef0c3f2",
+        "49535343-fe7d-4ae5-8fa9-9fafd205e455",
+        "0000fee7-0000-1000-8000-00805f9b34fb",
+        "0000e781-0000-1000-8000-00805f9b34fb",
+        "0000ff00-0000-1000-8000-00805f9b34fb",
       ],
     });
     return BluetoothPrinter.linkDevice(device);
@@ -103,7 +113,7 @@ export class BluetoothPrinter {
     if (!navigator.bluetooth || !navigator.bluetooth.getDevices) return [];
     try {
       const devices = await navigator.bluetooth.getDevices();
-      return devices.filter(d => d.name);
+      return devices.filter((d) => d.name);
     } catch {
       return [];
     }
@@ -115,15 +125,17 @@ export class BluetoothPrinter {
   }
 
   get name(): string {
-    return this.device.name ?? 'Impressora BLE';
+    return this.device.name ?? "Impressora BLE";
   }
 
-  set(align: 'left' | 'center' | 'right' = 'left'): void {
+  set(align: "left" | "center" | "right" = "left"): void {
     this.align = align;
     const cmd =
-      align === 'center' ? CMD_ALIGN_C
-      : align === 'right'  ? CMD_ALIGN_R
-      : CMD_ALIGN_L;
+      align === "center"
+        ? CMD_ALIGN_C
+        : align === "right"
+          ? CMD_ALIGN_R
+          : CMD_ALIGN_L;
     this.buffers.push(cmd);
   }
 
@@ -138,10 +150,10 @@ export class BluetoothPrinter {
       const binary = atob(data);
       const uint8 = new Uint8Array(binary.length);
       for (let i = 0; i < binary.length; i++) uint8[i] = binary.charCodeAt(i);
-      
+
       this.buffers.push(encodeImage(uint8, width, height));
     } catch (e) {
-      console.error('Erro ao processar imagem para a impressora:', e);
+      console.error("Erro ao processar imagem para a impressora:", e);
     }
   }
 
@@ -162,9 +174,9 @@ export class BluetoothPrinter {
     if (!data.length) return;
 
     const gatt = this.device.gatt;
-    if (!gatt) throw new Error('Dispositivo sem suporte GATT.');
+    if (!gatt) throw new Error("Dispositivo sem suporte GATT.");
 
-    const server   = await gatt.connect();
+    const server = await gatt.connect();
     const services = await server.getPrimaryServices();
 
     let characteristic: BluetoothRemoteGATTCharacteristic | null = null;
@@ -180,7 +192,9 @@ export class BluetoothPrinter {
     }
 
     if (!characteristic) {
-      throw new Error('Nenhuma característica BLE para escrita encontrada na impressora.');
+      throw new Error(
+        "Nenhuma característica BLE para escrita encontrada na impressora.",
+      );
     }
 
     const CHUNK = 50;
@@ -199,13 +213,13 @@ export class BluetoothPrinter {
         // Fallback to writeValue if the first one fails
         await characteristic.writeValue(chunk);
       }
-      
+
       // Delay slightly increased for hardware processing
-      await new Promise(r => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 50));
     }
 
     // Final processing pause
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 500));
 
     // Reset buffer but keep INIT for next batch
     this.buffers = [CMD_INIT];

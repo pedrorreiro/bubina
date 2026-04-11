@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { OrderTab } from '@/components/order/OrderTab';
 import { useApp } from '@/context/AppContext';
-import { getProdutos, getLoja } from '@/services/storage';
+import { getProdutos, getLoja } from '@/services/api';
 
 export default function PedidoPage() {
   const { 

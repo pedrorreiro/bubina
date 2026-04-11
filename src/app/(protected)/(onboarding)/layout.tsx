@@ -1,15 +1,13 @@
 import { redirect } from "next/navigation";
-import { useServerAuth } from "@/services/auth-server";
+import { getServerSession } from "@/services/session";
 
 export default async function OnboardingLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { getMe } = await useServerAuth();
-  const { authenticated, hasLoja } = await getMe();
-
-  if (authenticated && hasLoja) {
+  const { authenticated, loja } = await getServerSession();
+  if (authenticated && loja) {
     redirect("/pedido");
   }
 

@@ -1,5 +1,5 @@
 import { useApp } from '@/context/AppContext';
-import { addProduto as storageAddProd, deleteProduto as storageDelProd } from '@/services/storage';
+import { addProduto as storageAddProd, deleteProduto as storageDelProd, getProdutos as storageGetProd } from '@/services/api';
 import type { Produto } from '@/types';
 
 /**

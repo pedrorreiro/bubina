@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { SubscriptionStatus } from "@/types";
+import { Api } from "@/services/api";
 
 /**
  * Hook para gerenciar operações e estado de assinatura Stripe.
@@ -14,15 +15,7 @@ export function useSubscription() {
   /** Verifica o status atual da assinatura */
   const refreshSubscription = useCallback(async () => {
     try {
-      const res = await fetch("/api/auth/subscription");
-
-      if (!res.ok) {
-        console.error(`Erro na API de assinatura: ${res.status}`);
-        setIsLoading(false);
-        return;
-      }
-
-      const data = await res.json();
+      const data = await Api.subscription.getStatus();
       setSubscription(data);
     } catch (error) {
       console.error("Erro ao verificar assinatura:", error);
@@ -38,36 +31,17 @@ export function useSubscription() {
 
   /** Cria uma sessão de checkout no Stripe e retorna a URL */
   const createCheckout = async (priceType: "monthly" | "annual") => {
-    const res = await fetch("/api/stripe/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ priceType }),
-    });
-
-    const { url, error } = await res.json();
-    if (error) throw new Error(error);
-    return { url };
+    return await Api.stripe.checkout(priceType);
   };
 
   /** Cria uma sessão do Stripe Customer Portal e retorna a URL */
   const openPortal = async () => {
-    const res = await fetch("/api/stripe/portal", {
-      method: "POST",
-    });
-
-    const { url, error } = await res.json();
-    if (error) throw new Error(error);
-    return { url };
+    return await Api.stripe.openPortal();
   };
 
   /** Solicita o cancelamento da assinatura ao final do período */
   const cancelSubscription = async () => {
-    const res = await fetch("/api/stripe/cancel", {
-      method: "POST",
-    });
-
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
+    const data = await Api.stripe.cancel();
     
     // Atualizar o estado local após o cancelamento
     await refreshSubscription();

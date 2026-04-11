@@ -21,7 +21,7 @@ import { DEFAULT_LOJA } from "../types";
 import { 
   addToHistorico as storageAddHist, 
   saveLoja as storageSaveLoja 
-} from "../services/storage";
+} from "../services/api";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

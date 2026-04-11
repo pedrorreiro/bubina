@@ -1,5 +1,5 @@
 import { useApp } from '@/context/AppContext';
-import { deleteHistorico as storageDelHist } from '@/services/storage';
+import { deleteHistorico as storageDelHist } from '@/services/api';
 import type { HistoricoPedido } from '@/types';
 
 /**

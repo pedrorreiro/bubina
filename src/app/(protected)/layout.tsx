@@ -1,13 +1,12 @@
 import { redirect } from "next/navigation";
-import { useServerAuth } from "@/services/auth-server";
+import { getServerSession } from "@/services/session";
 
 export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { getMe } = await useServerAuth();
-  const { authenticated } = await getMe();
+  const { authenticated } = await getServerSession();
 
   if (!authenticated) {
     redirect("/login");
