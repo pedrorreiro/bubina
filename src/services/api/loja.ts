@@ -11,7 +11,7 @@ export const lojaApi = {
       nome: data.nome,
       telefone: data.telefone,
       endereco: data.endereco,
-      logo_raw: data.logo_raw,
+      logo_url: data.logo_url,
       logo_metodo: data.logo_metodo,
       mensagem_rodape: data.mensagem_rodape,
       largura_mm: data.largura_mm || DEFAULT_LOJA.largura_mm,

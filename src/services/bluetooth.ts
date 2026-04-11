@@ -157,6 +157,12 @@ export class BluetoothPrinter {
     }
   }
 
+  imageUrl(_url: string): void {
+    // Physical printers cannot process URLs directly. 
+    // The image must be fetched and processed into bits before calling image().
+    console.warn("BluetoothPrinter: imageUrl called but not supported. Use pre-processed bits with image() instead.");
+  }
+
   qr(content: string, size = 6): void {
     this.buffers.push(encodeQR(content, size));
   }

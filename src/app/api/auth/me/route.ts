@@ -9,7 +9,7 @@ export async function GET() {
 
   if (!user) {
     return NextResponse.json(
-      { authenticated: false, user: null, hasLoja: false, subscription: null },
+      { authenticated: false, user: null, loja: null, subscription: null },
       { status: 401 },
     );
   }
@@ -25,11 +25,11 @@ export async function GET() {
 
   return NextResponse.json({
     authenticated: true,
-    hasLoja: !!loja,
     user: {
       id: user.id,
       email: user.email,
     },
+    loja,
     subscription,
   });
 }

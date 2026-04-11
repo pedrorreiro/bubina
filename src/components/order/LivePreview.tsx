@@ -9,11 +9,19 @@ interface LivePreviewProps {
   onClose?: () => void;
 }
 
-function LogoRenderer({ dataJson }: { dataJson: string }) {
+function LogoRenderer({ dataJson, url }: { dataJson?: string, url?: string }) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [imgWidth, setImgWidth] = useState<number>(240);
 
   useEffect(() => {
+    if (url) {
+      setDataUrl(url);
+      setImgWidth(240); // Standard width for logos
+      return;
+    }
+
+    if (!dataJson) return;
+
     try {
       const { width, height, data } = JSON.parse(dataJson);
       setImgWidth(width);
@@ -44,7 +52,7 @@ function LogoRenderer({ dataJson }: { dataJson: string }) {
     } catch (e) {
       console.error('Erro ao renderizar logo no preview:', e);
     }
-  }, [dataJson]);
+  }, [dataJson, url]);
 
   if (!dataUrl) return null;
   const printWidthDots = 384; 
@@ -71,6 +79,13 @@ export function LivePreview({ text, colunas, isOpen, onClose }: LivePreviewProps
               const imgMatches = line.match(/\[IMG:(.*?)\]/);
               if (imgMatches) {
                 return <LogoRenderer key={i} dataJson={imgMatches[1]} />;
+              }
+            }
+
+            if (line.includes('[IMG_URL:')) {
+              const imgUrlMatches = line.match(/\[IMG_URL:(.*?)\]/);
+              if (imgUrlMatches) {
+                return <LogoRenderer key={i} url={imgUrlMatches[1]} />;
               }
             }
 

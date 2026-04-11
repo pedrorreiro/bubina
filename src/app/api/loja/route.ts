@@ -42,12 +42,13 @@ export async function POST(req: NextRequest) {
   // Buscar registro atual para comparar a logo e preservar o trial
   const { data: currentLoja } = await supabase
     .from("lojas")
-    .select("logo_raw, trial_ends_at, mensagem_rodape")
+    .select("logo_url, trial_ends_at, mensagem_rodape")
     .eq("user_id", user.id)
     .maybeSingle();
 
   // Verificar se está tentando mudar a logo ou o rodapé
-  const isChangingLogo = loja.logo_raw !== currentLoja?.logo_raw;
+  const isChangingLogo = 
+    loja.logo_url !== currentLoja?.logo_url;
   const isChangingRodape =
     loja.mensagem_rodape !== currentLoja?.mensagem_rodape;
 
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
         nome: loja.nome,
         telefone: loja.telefone,
         endereco: loja.endereco,
-        logo_raw: loja.logo_raw,
+        logo_url: loja.logo_url,
         logo_metodo: loja.logo_metodo,
         mensagem_rodape: loja.mensagem_rodape,
         trial_ends_at: trialEndsAt,

@@ -16,11 +16,11 @@ import type {
 } from "../types";
 import { BluetoothPrinter } from "../services/bluetooth";
 import { renderizarCupom } from "../services/cupom";
-import { processLogo } from "../services/image";
+import { fetchAndProcessLogo } from "../services/image";
 import { DEFAULT_LOJA } from "../types";
-import { 
-  addToHistorico as storageAddHist, 
-  saveLoja as storageSaveLoja 
+import {
+  addToHistorico as storageAddHist,
+  saveLoja as storageSaveLoja,
 } from "../services/api";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -54,12 +54,15 @@ interface AppState {
 
   // Historico
   historico: HistoricoPedido[];
-  setHistorico: (h: HistoricoPedido[] | ((prev: HistoricoPedido[]) => HistoricoPedido[])) => void;
+  setHistorico: (
+    h: HistoricoPedido[] | ((prev: HistoricoPedido[]) => HistoricoPedido[]),
+  ) => void;
   reabrirPedido: (pedido: HistoricoPedido) => void;
   pedidoReaberto: HistoricoPedido | null;
   setPedidoReaberto: (p: HistoricoPedido | null) => void;
-  
+
   // Auth, User & Subscription
+  userId: string | null;
   userEmail: string | null;
   setIsAuthenticated: (b: boolean) => void;
   subscription: SubscriptionStatus | null;
@@ -70,28 +73,36 @@ const AppContext = createContext<AppState | null>(null);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(
+    null,
+  );
   const [hasLoja, setHasLoja] = useState(false);
-  
+
   const [printer, setPrinter] = useState<BluetoothPrinter | null>(null);
   const [printerName, setPrinterName] = useState<string | null>(null);
-  const [printerStatus, setPrinterStatus] = useState<AppState["printerStatus"]>("disconnected");
-  const [authorizedDevice, setAuthorizedDevice] = useState<BluetoothDevice | null>(null);
+  const [printerStatus, setPrinterStatus] =
+    useState<AppState["printerStatus"]>("disconnected");
+  const [authorizedDevice, setAuthorizedDevice] =
+    useState<BluetoothDevice | null>(null);
 
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [loja, setLojaState] = useState<Loja>(DEFAULT_LOJA);
   const [historico, setHistorico] = useState<HistoricoPedido[]>([]);
-  const [pedidoReaberto, setPedidoReaberto] = useState<HistoricoPedido | null>(null);
+  const [pedidoReaberto, setPedidoReaberto] = useState<HistoricoPedido | null>(
+    null,
+  );
 
   useEffect(() => {
     // Sincroniza estado de autenticação via API interna (Proxy)
     // Isso evita que o browser bata direto no Supabase.
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
         setIsAuthenticated(data.authenticated);
         if (data.user) {
+          setUserId(data.user.id ?? null);
           setUserEmail(data.user.email ?? null);
         }
         if (data.loja) {
@@ -136,7 +147,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!printer) throw new Error("Nenhuma impressora conectada.");
 
     // 1. Tentar salvar no histórico primeiro (isso valida o limite diário no backend)
-    const subtotal = pedido.itens.reduce((s, i) => s + (i.qtd === null ? i.preco_uni : (i.qtd ?? 1) * i.preco_uni), 0);
+    const subtotal = pedido.itens.reduce(
+      (s, i) => s + (i.qtd === null ? i.preco_uni : (i.qtd ?? 1) * i.preco_uni),
+      0,
+    );
     let total = subtotal;
     for (const d of pedido.descontos) {
       const abat = d.tipo === "valor" ? d.valor : (total * d.valor) / 100;
@@ -153,13 +167,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // 2. Se salvou com sucesso, procede com a impressão física
     const lojaParaRender = { ...loja };
-    
+
     // SÓ ADICIONA A LOGO SE TIVER ASSINATURA ATIVA
-    if (loja.logo_raw && subscription?.active) {
-      lojaParaRender.logo = processLogo(loja.logo_raw, loja.logo_metodo || "dither");
+    if (subscription?.active) {
+      if (loja.logo_url) {
+        try {
+          lojaParaRender.logo = await fetchAndProcessLogo(
+            loja.logo_url,
+            loja.logo_metodo || "dither",
+          );
+        } catch (e) {
+          console.error("Falha ao processar logo via URL para impressão:", e);
+        }
+      }
     } else {
       // Garante que não tenha logo se não for premium
       delete lojaParaRender.logo;
+      delete lojaParaRender.logo_url;
     }
 
     renderizarCupom(printer, pedido, lojaParaRender);
@@ -171,7 +195,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const testWidth = async (colunas: number) => {
     if (!printer) throw new Error("Nenhuma impressora conectada.");
-    const regua = Array.from({ length: colunas }, (_, i) => (i + 1) % 10).join("");
+    const regua = Array.from({ length: colunas }, (_, i) => (i + 1) % 10).join(
+      "",
+    );
     printer.set("left");
     printer.text(`--- TESTE ---\nCol: ${colunas}\n${regua}\n\n\n`);
     await printer.flush();
@@ -219,8 +245,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         pedidoReaberto,
         setPedidoReaberto,
         userEmail,
+        userId,
         setIsAuthenticated,
-        subscription
+        subscription,
       }}
     >
       {children}

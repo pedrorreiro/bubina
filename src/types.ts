@@ -43,7 +43,7 @@ export interface Loja {
   largura_mm: number;
   largura_colunas: number;
   logo?: string; // Processed bit data (cached)
-  logo_raw?: string; // Original grayscale data
+  logo_url?: string; // URL da logo no Supabase Storage
   logo_metodo?: "threshold" | "dither";
 }
 
@@ -65,4 +65,5 @@ export const DEFAULT_LOJA: Loja = {
   mensagem_rodape: "Obrigado pela preferencia!",
   largura_mm: 48,
   largura_colunas: 32,
+  logo_url: "",
 };

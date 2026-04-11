@@ -14,10 +14,13 @@ import {
 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { maskPhone } from "@/lib/utils";
+import { StorageService } from "@/services/storage";
+import { useDebouncedCallback } from "use-debounce";
 
 export function SettingsTab() {
   const {
     loja,
+    userId,
     updateLojaLocally,
     setLoja,
     updatePrinterStatus,
@@ -31,21 +34,28 @@ export function SettingsTab() {
     updatePrinterStatus();
   }, [updatePrinterStatus]);
 
-  // Refatorando para uma abordagem de debounce mais limpa:
   const [localLoja, setLocalLoja] = useState(loja);
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
+  // 1. Sincroniza o local apenas quando a loja global mudar (e não for por digitação nossa)
   useEffect(() => {
     setLocalLoja(loja);
-  }, [loja.nome, loja.telefone, loja.endereco, loja.mensagem_rodape]);
+  }, [loja]);
+
+  // 2. Debounce exclusivo para persistência dos campos de texto usando biblioteca oficial
+  const debouncedSave = useDebouncedCallback((updatedLoja) => {
+    setLoja(updatedLoja);
+  }, 800);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (JSON.stringify(localLoja) !== JSON.stringify(loja)) {
-        setLoja(localLoja);
-      }
-    }, 800);
-    return () => clearTimeout(timer);
-  }, [localLoja, loja, setLoja]);
+    const fieldsToDebounce = ["nome", "telefone", "endereco", "mensagem_rodape"] as const;
+    const hasChanged = fieldsToDebounce.some(f => localLoja[f] !== loja[f]);
+
+    if (hasChanged) {
+      debouncedSave({ ...loja, ...localLoja });
+    }
+  }, [localLoja, loja, debouncedSave, setLoja]);
 
   if (isLoading) {
     return (
@@ -55,73 +65,52 @@ export function SettingsTab() {
     );
   }
 
+  // Helper para atualizações locais rápidas (inputs)
+  const handleTextChange = (field: keyof typeof localLoja, value: string) => {
+    setLocalLoja(prev => ({ ...prev, [field]: value }));
+  };
+
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !userId) return;
 
     if (!file.type.startsWith("image/")) {
       toast.error("Por favor, selecione uma imagem válida.");
       return;
     }
 
+    // Preview local imediato
     const reader = new FileReader();
-    reader.onload = async (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        const targetWidth = 240;
-        const scale = targetWidth / img.width;
-        const targetHeight = Math.floor(img.height * scale);
-
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, targetWidth, targetHeight);
-        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-
-        const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
-        const data = imageData.data;
-        const grayscaleData = new Uint8Array(targetWidth * targetHeight);
-
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          grayscaleData[i / 4] = 0.299 * r + 0.587 * g + 0.114 * b;
-        }
-
-        let binary = "";
-        for (let i = 0; i < grayscaleData.length; i++) {
-          binary += String.fromCharCode(grayscaleData[i]);
-        }
-        const base64Raw = btoa(binary);
-
-        setLoja({
-          ...loja,
-          logo_raw: JSON.stringify({
-            width: targetWidth,
-            height: targetHeight,
-            data: base64Raw,
-          }),
-          logo_metodo: "dither",
-        });
-        toast.success("Logo processada com sucesso!");
-      };
-      img.src = event.target?.result as string;
-    };
+    reader.onloadend = () => setLocalPreview(reader.result as string);
     reader.readAsDataURL(file);
+
+    try {
+      setIsUploading(true);
+      toast.loading("Enviando logo...", { id: "upload-logo" });
+      const publicUrl = await StorageService.uploadLogo(file, userId);
+      
+      // Ação direta: salva no banco e apaga o preview local
+      await setLoja({ ...loja, logo_url: publicUrl, logo_metodo: "dither" });
+      setLocalPreview(null);
+      
+      toast.success("Logo enviada com sucesso!", { id: "upload-logo" });
+    } catch (error) {
+      toast.error("Erro ao enviar logo. Tente novamente.", { id: "upload-logo" });
+      setLocalPreview(null);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const removeLogo = () => {
-    const newLoja = { ...loja };
-    delete newLoja.logo_raw;
-    delete newLoja.logo_metodo;
-    setLoja(newLoja);
-    toast.info("Logo removida.");
+  const removeLogo = async () => {
+    if (loja.logo_url) {
+      await StorageService.deleteLogo(loja.logo_url);
+      const newLoja = { ...loja };
+      delete newLoja.logo_url;
+      delete newLoja.logo_metodo;
+      await setLoja(newLoja);
+      toast.info("Logo removida.");
+    }
   };
 
   return (
@@ -158,8 +147,8 @@ export function SettingsTab() {
                 </label>
                 <input
                   className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm font-semibold text-white focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-text-dim/30"
-                  value={localLoja.nome}
-                  onChange={(e) => setLocalLoja({ ...localLoja, nome: e.target.value })}
+                  value={localLoja.nome || ""}
+                  onChange={(e) => handleTextChange("nome", e.target.value)}
                   placeholder="Ex: Panificadora Central"
                 />
               </div>
@@ -170,8 +159,8 @@ export function SettingsTab() {
                 </label>
                 <input
                   className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm font-bold text-white focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-text-dim/30 tabular-nums"
-                  value={localLoja.telefone}
-                  onChange={(e) => setLocalLoja({ ...localLoja, telefone: maskPhone(e.target.value) })}
+                  value={localLoja.telefone || ""}
+                  onChange={(e) => handleTextChange("telefone", maskPhone(e.target.value))}
                   placeholder="(00) 00000-0000"
                 />
               </div>
@@ -183,8 +172,8 @@ export function SettingsTab() {
               </label>
               <input
                 className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm font-semibold text-white focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-text-dim/30"
-                value={localLoja.endereco}
-                onChange={(e) => setLocalLoja({ ...localLoja, endereco: e.target.value })}
+                value={localLoja.endereco || ""}
+                onChange={(e) => handleTextChange("endereco", e.target.value)}
                 placeholder="Rua das Flores, 123"
               />
             </div>
@@ -197,7 +186,7 @@ export function SettingsTab() {
                 <input
                   className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm font-semibold text-white focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-text-dim/30"
                   value={localLoja.mensagem_rodape || ""}
-                  onChange={(e) => setLocalLoja({ ...localLoja, mensagem_rodape: e.target.value })}
+                  onChange={(e) => handleTextChange("mensagem_rodape", e.target.value)}
                   placeholder="Ex: Obrigado pela preferência!"
                 />
                 <p className="text-[10px] text-text-dim px-1">
@@ -228,35 +217,54 @@ export function SettingsTab() {
                   </label>
                 </div>
 
-                {!loja.logo_raw ? (
+                {!loja.logo_url ? (
                   <div className="relative group overflow-hidden rounded-2xl">
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleLogoUpload}
+                      disabled={isUploading}
                       className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer"
                     />
-                    <div className="flex flex-col items-center justify-center gap-4 p-12 border-2 border-dashed border-white/10 rounded-2xl bg-black/20 transition-all group-hover:border-primary/40 group-hover:bg-primary/5">
-                      <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center text-text-dim transition-transform group-hover:scale-110">
-                        <PlusCircle size={24} />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-white uppercase tracking-widest text-center">
-                          Selecionar Logomarca
-                        </p>
-                        <p className="text-[10px] text-text-dim mt-2 font-medium text-center">
-                          SVG, PNG ou JPG (Otimizado para térmicas)
-                        </p>
-                      </div>
+                    <div className="flex flex-col items-center justify-center gap-4 p-8 border-2 border-dashed border-white/10 rounded-2xl bg-black/20 transition-all group-hover:border-primary/40 group-hover:bg-primary/5 min-h-[180px]">
+                      {localPreview ? (
+                        <div className="relative group/preview">
+                          <img 
+                            src={localPreview} 
+                            alt="Preview" 
+                            className={`h-24 w-auto object-contain rounded-lg shadow-2xl transition-all ${isUploading ? 'opacity-40 grayscale blur-[2px]' : ''}`}
+                          />
+                          {isUploading && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-8 h-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <>
+                          <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center text-text-dim transition-transform group-hover:scale-110">
+                            <PlusCircle size={24} />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-white uppercase tracking-widest text-center">
+                              Selecionar Logomarca
+                            </p>
+                            <p className="text-[10px] text-text-dim mt-2 font-medium text-center">
+                              SVG, PNG ou JPG (Otimizado para térmicas)
+                            </p>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between p-6 bg-primary/5 border border-primary/20 rounded-2xl group">
                     <div className="flex items-center gap-5">
-                      <div className="w-16 h-16 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 overflow-hidden">
-                        <ImageIcon
-                          size={24}
-                          className="text-primary group-hover:scale-110 transition-transform"
+                      <div className="w-20 h-20 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 overflow-hidden p-2">
+                        <img 
+                          src={loja.logo_url} 
+                          alt="Logo da Loja" 
+                          className="w-full h-full object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500"
                         />
                       </div>
                       <div>
