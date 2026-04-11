@@ -63,7 +63,8 @@ export class MockPrinter implements Printer {
     this.lines.push(`[IMG_URL:${url}]`);
   }
 
-  qr(_content: string, _size = 6): void {
+  qr(_content: string, _size?: number): void {
+    void _size;
     this.lines.push(" ");
     this.lines.push(
       "██████████████".padStart((this.colunas + 14) / 2).padEnd(this.colunas),
@@ -113,6 +114,7 @@ export function renderizarCupom(
   pedido: Pedido,
   loja: Loja,
   padding = 2,
+  date?: Date,
 ): void {
   const nomeLoja = loja.nome || "ESTABELECIMENTO";
   const colunas = loja.largura_colunas || 32;
@@ -120,16 +122,17 @@ export function renderizarCupom(
   const pad = " ".repeat(padding);
 
   p.set("center");
-  if (loja.logo_url) {
-    p.imageUrl(loja.logo_url);
-    p.text("\n");
-  } else if (loja.logo) {
+  // Preferir bits já processados (Bluetooth); logo_url só para preview/Mock sem pré-processamento.
+  if (loja.logo) {
     p.image(loja.logo);
+    p.text("\n");
+  } else if (loja.logo_url) {
+    p.imageUrl(loja.logo_url);
     p.text("\n");
   }
   p.text(`${nomeLoja}\n\n`);
 
-  const now = new Date();
+  const now = date || new Date();
   const dataHora = `${now.toLocaleDateString("pt-BR")} ${now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
   p.text(`${dataHora}\n\n`);
 
@@ -241,6 +244,7 @@ export function gerarPreview(
   pedido: Pedido,
   loja: Loja,
   isPremium = false,
+  date?: Date,
 ): string {
   const mock = new MockPrinter(loja.largura_colunas);
 
@@ -258,6 +262,6 @@ export function gerarPreview(
     delete lojaParaRender.logo_url;
   }
 
-  renderizarCupom(mock, pedido, lojaParaRender);
+  renderizarCupom(mock, pedido, lojaParaRender, 2, date);
   return mock.getText();
 }

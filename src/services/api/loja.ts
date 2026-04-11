@@ -3,7 +3,7 @@ import { DEFAULT_LOJA, type Loja } from "../../types";
 
 export const lojaApi = {
   get: async (): Promise<Loja> => {
-    const data = await request<any>("/api/loja");
+    const data = await request<Loja>("/api/loja");
     if (!data) return DEFAULT_LOJA;
 
     return {

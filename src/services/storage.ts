@@ -9,7 +9,7 @@ export const StorageService = {
     const fileName = `${userId}-${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = fileName;
 
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('logos')
       .upload(filePath, file);
 

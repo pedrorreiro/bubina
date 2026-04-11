@@ -1,4 +1,5 @@
 import { Header } from "@/components/layout/Header";
+import { PaidPageBody } from "@/components/layout/PaidPageBody";
 import { getServerSession } from "@/services/session";
 import { redirect } from "next/navigation";
 
@@ -18,11 +19,15 @@ export default async function PaidLayout({
   }
 
   return (
-    <>
+    <div className="relative flex min-h-dvh flex-col bg-bg">
+      <div
+        className="app-shell-glow pointer-events-none fixed inset-0 -z-10"
+        aria-hidden
+      />
       <Header />
-      <main className="container mx-auto max-w-7xl pt-20 pb-24 md:pt-24 md:pb-12 px-4 md:px-8">
-        {children}
+      <main className="app-main mx-auto flex w-full min-w-0 max-w-7xl flex-1 flex-col self-center">
+        <PaidPageBody>{children}</PaidPageBody>
       </main>
-    </>
+    </div>
   );
 }

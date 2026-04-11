@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+const tailwindConfig = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,18 +9,18 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#6366f1',
-          hover: '#4f46e5',
-          glow: 'rgba(99, 102, 241, 0.2)',
+          DEFAULT: '#6eb0ff',
+          hover: '#93c4ff',
+          glow: 'rgba(110, 176, 255, 0.12)',
         },
-        bg: '#050505',
-        surface: '#111111',
-        'surface-raised': '#1a1a1a',
-        'text-muted': '#94a3b8',
-        'text-dim': '#64748b',
-        green: '#10b981',
-        red: '#ef4444',
-        yellow: '#f59e0b',
+        bg: '#07080d',
+        surface: '#11141d',
+        'surface-raised': '#181c28',
+        'text-muted': '#9aa3b8',
+        'text-dim': '#6b728c',
+        green: '#3ecf8e',
+        red: '#fb7185',
+        yellow: '#fbbf5c',
       },
       borderRadius: {
         DEFAULT: '12px',
@@ -37,3 +37,5 @@ export default {
   },
   plugins: [],
 };
+
+export default tailwindConfig;

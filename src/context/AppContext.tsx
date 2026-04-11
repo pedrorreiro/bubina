@@ -10,7 +10,6 @@ import type {
   Loja,
   Pedido,
   Produto,
-  ItemPedido,
   HistoricoPedido,
   SubscriptionStatus,
 } from "../types";
@@ -38,6 +37,8 @@ interface AppState {
   disconnectPrinter: () => void;
   updatePrinterStatus: () => void;
   printCupom: (pedido: Pedido) => Promise<void>;
+  /** Só envia à impressora (pedido já existe no histórico). */
+  reimprimirCupom: (pedido: Pedido) => Promise<void>;
   authorizedDevice: BluetoothDevice | null;
   testWidth: (colunas: number) => Promise<void>;
 
@@ -52,12 +53,7 @@ interface AppState {
   setLojaState: (l: Loja) => void;
   setHasLoja: (b: boolean) => void;
 
-  // Historico
-  historico: HistoricoPedido[];
-  setHistorico: (
-    h: HistoricoPedido[] | ((prev: HistoricoPedido[]) => HistoricoPedido[]),
-  ) => void;
-  reabrirPedido: (pedido: HistoricoPedido) => void;
+  /** Pedido vindo do histórico para editar na tela de pedido */
   pedidoReaberto: HistoricoPedido | null;
   setPedidoReaberto: (p: HistoricoPedido | null) => void;
 
@@ -89,7 +85,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [loja, setLojaState] = useState<Loja>(DEFAULT_LOJA);
-  const [historico, setHistorico] = useState<HistoricoPedido[]>([]);
   const [pedidoReaberto, setPedidoReaberto] = useState<HistoricoPedido | null>(
     null,
   );
@@ -101,6 +96,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .then((res) => res.json())
       .then((data) => {
         setIsAuthenticated(data.authenticated);
+        if (!data.authenticated) {
+          setUserId(null);
+          setUserEmail(null);
+        }
         if (data.user) {
           setUserId(data.user.id ?? null);
           setUserEmail(data.user.email ?? null);
@@ -127,6 +126,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setPrinter(p);
       setPrinterName(p.name);
       setPrinterStatus("connected");
+      if (manualDevice) {
+        setAuthorizedDevice(manualDevice);
+      } else {
+        try {
+          const devices = await BluetoothPrinter.getAuthorizedDevices();
+          setAuthorizedDevice(devices[0] ?? null);
+        } catch {
+          setAuthorizedDevice(null);
+        }
+      }
     } catch (e) {
       setPrinterStatus("error");
       throw e;
@@ -137,16 +146,52 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPrinter(null);
     setPrinterName(null);
     setPrinterStatus("disconnected");
+    setAuthorizedDevice(null);
   };
 
   const updatePrinterStatus = () => {
     setPrinterStatus(printer ? "connected" : "disconnected");
   };
 
+  const buildLojaParaImpressao = async (): Promise<Loja> => {
+    const lojaParaRender = { ...loja };
+
+    if (subscription?.active) {
+      if (loja.logo_url) {
+        try {
+          lojaParaRender.logo = await fetchAndProcessLogo(
+            loja.logo_url,
+            loja.logo_metodo || "dither",
+          );
+          delete lojaParaRender.logo_url;
+        } catch (e) {
+          console.error("Falha ao processar logo via URL para impressão:", e);
+          delete lojaParaRender.logo_url;
+        }
+      }
+    } else {
+      delete lojaParaRender.logo;
+      delete lojaParaRender.logo_url;
+    }
+
+    return lojaParaRender;
+  };
+
+  const imprimirPedidoFisico = async (pedido: Pedido) => {
+    const p = printer;
+    if (!p) throw new Error("Nenhuma impressora conectada.");
+    const lojaParaRender = await buildLojaParaImpressao();
+    renderizarCupom(p, pedido, lojaParaRender);
+    await p.flush();
+  };
+
+  const reimprimirCupom = async (pedido: Pedido) => {
+    await imprimirPedidoFisico(pedido);
+  };
+
   const printCupom = async (pedido: Pedido) => {
     if (!printer) throw new Error("Nenhuma impressora conectada.");
 
-    // 1. Tentar salvar no histórico primeiro (isso valida o limite diário no backend)
     const subtotal = pedido.itens.reduce(
       (s, i) => s + (i.qtd === null ? i.preco_uni : (i.qtd ?? 1) * i.preco_uni),
       0,
@@ -157,7 +202,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       total = Math.max(0, total - abat);
     }
 
-    const novoPedido = await storageAddHist({
+    // 1. Sempre salvar no servidor antes da impressão (limite free + histórico)
+    await storageAddHist({
       cpf: pedido.cpf || null,
       itens: pedido.itens,
       descontos: pedido.descontos,
@@ -165,32 +211,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       total,
     });
 
-    // 2. Se salvou com sucesso, procede com a impressão física
-    const lojaParaRender = { ...loja };
-
-    // SÓ ADICIONA A LOGO SE TIVER ASSINATURA ATIVA
-    if (subscription?.active) {
-      if (loja.logo_url) {
-        try {
-          lojaParaRender.logo = await fetchAndProcessLogo(
-            loja.logo_url,
-            loja.logo_metodo || "dither",
-          );
-        } catch (e) {
-          console.error("Falha ao processar logo via URL para impressão:", e);
-        }
-      }
-    } else {
-      // Garante que não tenha logo se não for premium
-      delete lojaParaRender.logo;
-      delete lojaParaRender.logo_url;
+    // 2. Impressão física — se falhar, o pedido já está salvo
+    try {
+      await imprimirPedidoFisico(pedido);
+    } catch (e) {
+      console.error("Falha na impressão após salvar:", e);
+      throw new Error(
+        "Pedido salvo no histórico, mas a impressão falhou. Abra o histórico e use Reimprimir.",
+      );
     }
-
-    renderizarCupom(printer, pedido, lojaParaRender);
-    await printer.flush();
-
-    // 3. Atualizar estado local
-    setHistorico((prev) => [novoPedido, ...prev]);
   };
 
   const testWidth = async (colunas: number) => {
@@ -201,10 +230,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     printer.set("left");
     printer.text(`--- TESTE ---\nCol: ${colunas}\n${regua}\n\n\n`);
     await printer.flush();
-  };
-
-  const reabrirPedido = (pedido: HistoricoPedido) => {
-    setPedidoReaberto(pedido);
   };
 
   const updateLojaLocally = (l: Loja) => {
@@ -231,6 +256,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         disconnectPrinter,
         updatePrinterStatus,
         printCupom,
+        reimprimirCupom,
         testWidth,
         produtos,
         setProdutos,
@@ -239,9 +265,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateLojaLocally,
         setLojaState,
         setHasLoja,
-        historico,
-        setHistorico,
-        reabrirPedido,
         pedidoReaberto,
         setPedidoReaberto,
         userEmail,

@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase-server';
 import { stripe } from '@/lib/stripe';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
+  void _req;
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -44,10 +45,11 @@ export async function POST(req: NextRequest) {
       cancelAt: subscription.cancel_at
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('💥 [Stripe/Cancel] ERRO:', error);
+    const message = error instanceof Error ? error.message : 'Erro ao processar o cancelamento.';
     return NextResponse.json({ 
-      error: error.message || 'Erro ao processar o cancelamento.' 
+      error: message
     }, { status: 500 });
   }
 }

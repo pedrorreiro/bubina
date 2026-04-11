@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { AppProvider } from "../context/AppContext";
+import { Provider } from "@/components/ui/provider";
 
 const pjs = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -25,8 +26,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover",
 };
-
 
 export default function RootLayout({
   children,
@@ -34,12 +35,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR">
+    <html suppressHydrationWarning lang="pt-BR">
       <body
-        className={`${pjs.variable} ${jbm.variable} font-sans antialiased bg-bg text-text`}
+        className={`${pjs.variable} ${jbm.variable} font-sans antialiased bg-bg text-text min-h-dvh w-full`}
       >
-        <Toaster position="bottom-right" richColors theme="dark" closeButton />
-        <AppProvider>{children}</AppProvider>
+        <Provider>
+          <Toaster
+            position="bottom-right"
+            richColors
+            theme="dark"
+            closeButton
+          />
+          <AppProvider>{children}</AppProvider>
+        </Provider>
       </body>
     </html>
   );

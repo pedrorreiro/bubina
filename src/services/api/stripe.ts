@@ -1,5 +1,4 @@
 import { request } from "./base";
-import type { SubscriptionStatus } from "../../types";
 
 export const stripeApi = {
   /** Cria uma sessão de checkout no Stripe */

@@ -40,7 +40,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg flex items-center justify-center p-6 relative overflow-hidden">
+    <div className="app-page-gutter min-h-dvh bg-bg flex items-center justify-center py-8 sm:py-12 relative overflow-hidden">
       {/* Background Orbs */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />

@@ -157,7 +157,8 @@ export class BluetoothPrinter {
     }
   }
 
-  imageUrl(_url: string): void {
+  imageUrl(url: string): void {
+    void url;
     // Physical printers cannot process URLs directly. 
     // The image must be fetched and processed into bits before calling image().
     console.warn("BluetoothPrinter: imageUrl called but not supported. Use pre-processed bits with image() instead.");
@@ -204,7 +205,6 @@ export class BluetoothPrinter {
     }
 
     const CHUNK = 50;
-    const useWithoutResponse = characteristic.properties.writeWithoutResponse;
 
     for (let i = 0; i < data.length; i += CHUNK) {
       const chunk = data.slice(i, i + CHUNK);
@@ -215,7 +215,7 @@ export class BluetoothPrinter {
         } else {
           await characteristic.writeValue(chunk);
         }
-      } catch (e) {
+      } catch {
         // Fallback to writeValue if the first one fails
         await characteristic.writeValue(chunk);
       }

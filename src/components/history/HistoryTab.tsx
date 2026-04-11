@@ -1,145 +1,411 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
 import { toast } from "sonner";
-import { useHistory } from "@/hooks/useHistory";
-import { 
-  History, 
-  Calendar, 
-  Trash2, 
-  ArrowRight, 
-  Package, 
+import { getHistorico, deleteHistorico as apiDeleteHistorico } from "@/services/api";
+import { normalizeHistoricoPedido } from "@/lib/pedidos-normalize";
+import type { HistoricoPedido, Pedido } from "@/types";
+import {
+  History,
+  Calendar,
+  Trash2,
+  ChevronRight,
+  Package,
   User,
-  Clock
+  Clock,
+  Printer,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import {
+  Box,
+  Flex,
+  Text,
+  HStack,
+  VStack,
+  Center,
+  IconButton,
+  Stack,
+  Spinner,
+} from "@chakra-ui/react";
 
-interface HistoryTabProps {
-  onSetActiveTab: (tab: "pedido" | "produtos" | "loja" | "ia" | "historico") => void;
+function historicoParaPedido(v: HistoricoPedido): Pedido {
+  return {
+    cpf: v.cpf,
+    itens: v.itens,
+    descontos: v.descontos,
+    total: v.total,
+  };
 }
 
-export function HistoryTab({ onSetActiveTab }: HistoryTabProps) {
-  const { historico, reabrirPedido } = useApp();
-  const { deleteHistorico } = useHistory();
+export function HistoryTab() {
+  const router = useRouter();
+  const {
+    isLoading: isAppLoading,
+    setPedidoReaberto,
+    reimprimirCupom,
+    printerStatus,
+  } = useApp();
+  const [historico, setHistorico] = useState<HistoricoPedido[]>([]);
+  const [historicoLoading, setHistoricoLoading] = useState(true);
+  const [reprintingId, setReprintingId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
-  const handleReabrir = (pedido: any) => {
-    reabrirPedido(pedido);
-    onSetActiveTab("pedido");
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isAppLoading) return;
+
+    let cancelled = false;
+    setHistoricoLoading(true);
+
+    getHistorico()
+      .then((rows) => {
+        if (cancelled) return;
+        const list = Array.isArray(rows) ? rows : [];
+        setHistorico(list.map(normalizeHistoricoPedido));
+      })
+      .catch((e) => {
+        console.error(e);
+        toast.error("Não foi possível carregar o histórico");
+      })
+      .finally(() => {
+        if (!cancelled) setHistoricoLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAppLoading]);
+
+  const formatDate = (dateStr: string) => {
+    if (!mounted) return "…";
+    try {
+      return format(new Date(dateStr), "dd MMM yyyy", { locale: ptBR });
+    } catch {
+      return "—";
+    }
+  };
+
+  const formatTime = (dateStr: string) => {
+    if (!mounted) return "…";
+    try {
+      return format(new Date(dateStr), "HH:mm");
+    } catch {
+      return "—";
+    }
+  };
+
+  const handleReabrir = (pedido: HistoricoPedido) => {
+    setPedidoReaberto(pedido);
+    router.push("/pedido");
+  };
+
+  const handleReimprimir = async (venda: HistoricoPedido, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (printerStatus !== "connected") {
+      toast.error("Conecte a impressora no topo da tela");
+      return;
+    }
+    setReprintingId(venda.id);
+    try {
+      await reimprimirCupom(historicoParaPedido(venda));
+      toast.success("Cupom reimpresso");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao reimprimir");
+    } finally {
+      setReprintingId(null);
+    }
   };
 
   const handleExcluir = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm("Remover venda do histórico?")) {
-      await deleteHistorico(id);
-      toast.info("Venda removida do histórico");
+    if (confirm("Remover esta venda do histórico?")) {
+      try {
+        await apiDeleteHistorico(id);
+        setHistorico((prev) => prev.filter((h) => h.id !== id));
+        toast.info("Registro removido");
+      } catch {
+        toast.error("Erro ao remover");
+      }
     }
   };
 
-  return (
-    <div className="space-y-8 pt-4 pb-20">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 text-primary">
-            <History size={24} />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">Vendas Realizadas</h2>
-            <p className="text-[10px] font-semibold text-text-dim uppercase tracking-widest">Histórico de Movimentação</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 px-5 py-2.5 bg-white/5 border border-white/5 rounded-2xl">
-          <span className="text-xl font-bold text-white tabular-nums leading-none">{historico.length}</span>
-          <span className="text-[9px] font-bold text-text-dim uppercase tracking-widest">Registros Efetivados</span>
-        </div>
-      </div>
+  const loading = isAppLoading || historicoLoading;
 
-      <div className="grid grid-cols-1 gap-4">
+  if (loading) {
+    return (
+      <Center py="20">
+        <Spinner size="lg" color="blue.400" borderWidth="3px" />
+      </Center>
+    );
+  }
+
+  return (
+    <VStack align="stretch" gap={{ base: 4, md: 5 }} w="full" pb={{ base: 1, md: 0 }}>
+      <Box className="app-panel" overflow="hidden">
+        <Flex
+          direction={{ base: "column", sm: "row" }}
+          align={{ base: "stretch", sm: "center" }}
+          justify="space-between"
+          gap={4}
+          p={{ base: 6, md: 6 }}
+        >
+          <Flex align="center" gap={3} minW={0}>
+            <Center
+              w="10"
+              h="10"
+              rounded="xl"
+              bg="blue.500/12"
+              color="blue.300"
+              flexShrink={0}
+            >
+              <History size={20} strokeWidth={1.75} />
+            </Center>
+            <Box minW={0}>
+              <Text
+                fontSize="11px"
+                fontWeight="semibold"
+                color="whiteAlpha.500"
+                textTransform="uppercase"
+                letterSpacing="0.06em"
+              >
+                Registros
+              </Text>
+              <Text fontSize="lg" fontWeight="700" letterSpacing="-0.02em" mt="0.5">
+                Histórico de vendas
+              </Text>
+            </Box>
+          </Flex>
+          <HStack
+            px={4}
+            py={2.5}
+            rounded="xl"
+            bg="whiteAlpha.50"
+            borderWidth="1px"
+            borderColor="whiteAlpha.100"
+            justify="center"
+            flexShrink={0}
+          >
+            <Text fontSize="xl" fontWeight="800" color="white" fontVariantNumeric="tabular-nums">
+              {historico.length}
+            </Text>
+            <Text fontSize="11px" fontWeight="600" color="whiteAlpha.500">
+              {historico.length === 1 ? "venda" : "vendas"}
+            </Text>
+          </HStack>
+        </Flex>
+      </Box>
+
+      <Stack gap={{ base: 3, md: 3 }}>
         {historico.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-40 text-center glass-panel border-dashed border-white/10">
-            <div className="w-20 h-20 rounded-full bg-white/[0.02] flex items-center justify-center mb-8">
-               <History size={32} className="text-text-dim opacity-10" />
-            </div>
-            <h3 className="text-white font-bold mb-2">Histórico Vazio</h3>
-            <p className="text-sm text-text-dim max-w-[320px]">
-              Suas vendas finalizadas aparecerão aqui automaticamente após a emissão do cupom.
-            </p>
-          </div>
+          <Box className="app-panel" p={{ base: 6, md: 6 }}>
+            <Center
+              flexDir="column"
+              py={{ base: 12, md: 16 }}
+              px={4}
+              textAlign="center"
+              rounded="xl"
+              borderWidth="1px"
+              borderStyle="dashed"
+              borderColor="whiteAlpha.100"
+              bg="whiteAlpha.50"
+            >
+              <Center
+                w="14"
+                h="14"
+                rounded="full"
+                bg="whiteAlpha.80"
+                color="whiteAlpha.400"
+                mb={4}
+              >
+                <History size={22} />
+              </Center>
+              <Text fontWeight="semibold" fontSize="sm">
+                Nenhuma venda ainda
+              </Text>
+              <Text fontSize="13px" color="whiteAlpha.500" mt={2} maxW="280px" lineHeight="short">
+                Ao imprimir um cupom na tela de pedido, a venda aparece aqui para consulta ou reabertura.
+              </Text>
+            </Center>
+          </Box>
         ) : (
           historico.map((venda) => (
-            <div
+            <Box
               key={venda.id}
+              className="app-panel"
+              overflow="hidden"
               onClick={() => handleReabrir(venda)}
-              className="group glass-panel border-white/[0.04] p-8 hover:bg-white/[0.04] hover:border-primary/20 transition-all cursor-pointer active:scale-[0.99] overflow-hidden"
+              role="button"
+              tabIndex={0}
+              cursor="pointer"
+              transition="all 0.15s"
+              _hover={{
+                borderColor: "blue.400/35",
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleReabrir(venda);
+                }
+              }}
             >
-              <div className="flex flex-col lg:flex-row lg:items-center gap-8">
-                {/* Date & ID */}
-                <div className="flex flex-row lg:flex-col items-center lg:items-start gap-4 lg:gap-1 lg:min-w-[160px] lg:border-r lg:border-white/5">
-                  <div className="flex items-center gap-2 text-primary">
-                    <Calendar size={14} />
-                    <span className="text-sm font-bold tracking-tight">
-                      {format(new Date(venda.data), "dd MMM, yyyy", { locale: ptBR })}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-text-dim">
-                    <Clock size={12} strokeWidth={2.5} />
-                    <span className="text-[11px] font-semibold tabular-nums">
-                      {format(new Date(venda.data), "HH:mm")}
-                    </span>
-                  </div>
-                </div>
+              <Box p={{ base: 6, md: 5 }}>
+                <Flex
+                  direction={{ base: "column", md: "row" }}
+                  align={{ base: "stretch", md: "center" }}
+                  gap={{ base: 4, md: 5 }}
+                >
+                  <VStack align="start" gap={1} flexShrink={0} minW={{ md: "140px" }}>
+                    <HStack gap={2} color="blue.300">
+                      <Calendar size={14} />
+                      <Text fontSize="sm" fontWeight="semibold">
+                        {formatDate(venda.data)}
+                      </Text>
+                    </HStack>
+                    <HStack gap={2} color="whiteAlpha.500" pl="0.5">
+                      <Clock size={12} />
+                      <Text fontSize="12px" fontWeight="500">
+                        {formatTime(venda.data)}
+                      </Text>
+                    </HStack>
+                  </VStack>
 
-                {/* Main Content Details */}
-                <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-8">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-text-dim uppercase tracking-widest">Itens</p>
-                    <div className="flex items-center gap-3 text-white">
-                      <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-                        <Package size={14} className="opacity-40" />
-                      </div>
-                      <span className="text-base font-bold">{venda.itens.length}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-text-dim uppercase tracking-widest">Cliente</p>
-                    <div className="flex items-center gap-3 text-white">
-                      <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-                        <User size={14} className="opacity-40" />
-                      </div>
-                      <span className="text-sm font-bold truncate max-w-[140px]">
-                        {venda.cpf ? `CPF: ${venda.cpf}` : "Consumidor Final"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1 col-span-2 md:col-span-1">
-                    <p className="text-[10px] font-bold text-text-dim uppercase tracking-widest">Valor Movimentado</p>
-                    <div className="flex items-baseline gap-1.5">
-                       <span className="text-sm font-bold text-primary">R$</span>
-                       <span className="text-2xl font-bold text-white tabular-nums tracking-tight">
-                         {venda.total.toFixed(2).replace(".", ",")}
-                       </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions Panel */}
-                <div className="flex items-center gap-3 lg:pl-8 lg:border-l lg:border-white/5">
-                  <button
-                    onClick={(e) => handleExcluir(venda.id, e)}
-                    className="w-12 h-12 flex items-center justify-center rounded-2xl bg-red/5 border border-red/10 text-red hover:bg-red hover:text-white transition-all shadow-lg shadow-red/5 group-hover:shadow-red/20"
-                    title="Excluir do histórico"
+                  <Flex
+                    flex="1"
+                    direction={{ base: "column", sm: "row" }}
+                    align={{ base: "stretch", sm: "center" }}
+                    justify="space-between"
+                    gap={4}
+                    minW={0}
                   >
-                    <Trash2 size={18} />
-                  </button>
-                  <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/5 border border-white/5 text-text-muted group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all shadow-lg group-hover:shadow-primary/30">
-                    <ArrowRight size={20} className="transition-transform group-hover:translate-x-1" />
-                  </div>
-                </div>
-              </div>
-            </div>
+                    <HStack
+                      align="stretch"
+                      gap={{ base: 4, sm: 8 }}
+                      flexWrap="wrap"
+                      flex="1"
+                      minW={0}
+                    >
+                      <HStack gap={2} minW="0">
+                        <Center
+                          w="8"
+                          h="8"
+                          rounded="lg"
+                          bg="whiteAlpha.50"
+                          color="whiteAlpha.500"
+                          flexShrink={0}
+                        >
+                          <Package size={14} />
+                        </Center>
+                        <VStack align="start" gap={0} minW={0}>
+                          <Text fontSize="10px" fontWeight="semibold" color="whiteAlpha.500" textTransform="uppercase">
+                            Itens
+                          </Text>
+                          <Text fontSize="sm" fontWeight="700">
+                            {venda.itens.length}
+                          </Text>
+                        </VStack>
+                      </HStack>
+
+                      <HStack gap={2} minW="0" maxW={{ base: "full", sm: "200px" }}>
+                        <Center
+                          w="8"
+                          h="8"
+                          rounded="lg"
+                          bg="whiteAlpha.50"
+                          color="whiteAlpha.500"
+                          flexShrink={0}
+                        >
+                          <User size={14} />
+                        </Center>
+                        <VStack align="start" gap={0} minW={0}>
+                          <Text fontSize="10px" fontWeight="semibold" color="whiteAlpha.500" textTransform="uppercase">
+                            Cliente
+                          </Text>
+                          <Text fontSize="sm" fontWeight="semibold" truncate w="full">
+                            {venda.cpf ? `CPF ${venda.cpf}` : "Consumidor final"}
+                          </Text>
+                        </VStack>
+                      </HStack>
+                    </HStack>
+
+                    <Flex
+                      align="center"
+                      justify="space-between"
+                      gap={3}
+                      flexShrink={0}
+                      w={{ base: "full", md: "auto" }}
+                    >
+                      <VStack align={{ base: "start", md: "end" }} gap={0}>
+                        <Text fontSize="10px" fontWeight="semibold" color="whiteAlpha.500" textTransform="uppercase">
+                          Total
+                        </Text>
+                        <HStack align="baseline" gap={1}>
+                          <Text fontSize="sm" fontWeight="700" color="blue.300">
+                            R$
+                          </Text>
+                          <Text
+                            fontSize={{ base: "xl", md: "2xl" }}
+                            fontWeight="800"
+                            fontVariantNumeric="tabular-nums"
+                            letterSpacing="-0.02em"
+                          >
+                            {venda.total.toFixed(2).replace(".", ",")}
+                          </Text>
+                        </HStack>
+                      </VStack>
+
+                      <HStack gap={2} flexShrink={0}>
+                        <IconButton
+                          variant="subtle"
+                          colorPalette="blue"
+                          size="sm"
+                          rounded="lg"
+                          aria-label="Reimprimir cupom"
+                          loading={reprintingId === venda.id}
+                          disabled={printerStatus !== "connected"}
+                          onClick={(e) => handleReimprimir(venda, e)}
+                        >
+                          <Printer size={16} />
+                        </IconButton>
+                        <IconButton
+                          variant="subtle"
+                          colorPalette="red"
+                          size="sm"
+                          rounded="lg"
+                          aria-label="Excluir do histórico"
+                          onClick={(e) => handleExcluir(venda.id, e)}
+                        >
+                          <Trash2 size={16} />
+                        </IconButton>
+                        <Center
+                          w="9"
+                          h="9"
+                          rounded="lg"
+                          bg="whiteAlpha.50"
+                          color="whiteAlpha.500"
+                          borderWidth="1px"
+                          borderColor="whiteAlpha.100"
+                        >
+                          <ChevronRight size={18} />
+                        </Center>
+                      </HStack>
+                    </Flex>
+                  </Flex>
+                </Flex>
+
+                <Text fontSize="11px" color="whiteAlpha.400" mt={3} display={{ base: "block", md: "none" }}>
+                  Toque para reabrir na comanda
+                </Text>
+              </Box>
+            </Box>
           ))
         )}
-      </div>
-    </div>
+      </Stack>
+    </VStack>
   );
 }

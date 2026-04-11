@@ -17,7 +17,7 @@ export async function GET() {
     .from("pedidos")
     .select("*")
     .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+    .order("data", { ascending: false });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       .from("pedidos")
       .select("*", { count: "exact", head: true })
       .eq("user_id", user.id)
-      .gte("created_at", today.toISOString());
+      .gte("data", today.toISOString());
 
     if (countError) {
       console.error("Erro ao contar pedidos do dia:", countError);
@@ -77,6 +77,10 @@ export async function POST(req: NextRequest) {
       itens: pedido.itens,
       descontos: pedido.descontos,
       total: pedido.total,
+      data:
+        typeof pedido.data === "string"
+          ? pedido.data
+          : new Date().toISOString(),
     })
     .select()
     .single();

@@ -2,6 +2,34 @@ import { stripe, PRICES } from "@/lib/stripe";
 import { SupabaseClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 
+/** Fim do período (Unix s): no Stripe API recente costuma vir no primeiro subscription item. */
+function getStripeSubscriptionPeriodEndUnix(
+  sub: Stripe.Subscription,
+): number | null {
+  const first = sub.items?.data?.[0];
+  if (first && typeof first.current_period_end === "number") {
+    return first.current_period_end;
+  }
+  const legacy = sub as Stripe.Subscription & { current_period_end?: number };
+  return typeof legacy.current_period_end === "number"
+    ? legacy.current_period_end
+    : null;
+}
+
+function guessBillingDaysFromSubscription(sub: Stripe.Subscription): number {
+  const item = sub.items?.data?.[0];
+  const price = item?.price;
+  if (price && typeof price === "object" && price.recurring?.interval) {
+    return price.recurring.interval === "year" ? 366 : 31;
+  }
+  const plan = item?.plan;
+  if (plan && typeof plan === "object" && "interval" in plan) {
+    const interval = (plan as { interval?: string }).interval;
+    return interval === "year" ? 366 : 31;
+  }
+  return 31;
+}
+
 export interface Subscription {
   active: boolean;
   reason: "no_store" | "manual" | "trial" | "paid" | "expired";
@@ -63,7 +91,13 @@ export class SubscriptionService {
   /**
    * Lógica pura de cálculo de acesso baseada nos dados da loja.
    */
-  private static calculateAccess(loja: any): Subscription {
+  private static calculateAccess(loja: {
+    is_premium?: boolean;
+    trial_ends_at?: string | null;
+    is_canceling?: boolean;
+    current_period_end?: string | null;
+    subscription_status?: string | null;
+  }): Subscription {
     // 1. Check for manual override (Lifetime/Manual access)
     if (loja.is_premium) {
       return {
@@ -87,9 +121,9 @@ export class SubscriptionService {
       return {
         active: true,
         reason: "trial",
-        trialEndsAt: loja.trial_ends_at,
-        currentPeriodEnd: loja.current_period_end,
-        subscriptionStatus: loja.subscription_status,
+        trialEndsAt: loja.trial_ends_at || null,
+        currentPeriodEnd: loja.current_period_end || null,
+        subscriptionStatus: loja.subscription_status || null,
         isCanceling,
       };
     }
@@ -109,9 +143,9 @@ export class SubscriptionService {
       return {
         active: true,
         reason: "paid",
-        trialEndsAt: loja.trial_ends_at,
-        currentPeriodEnd: loja.current_period_end,
-        subscriptionStatus: loja.subscription_status,
+        trialEndsAt: loja.trial_ends_at || null,
+        currentPeriodEnd: loja.current_period_end || null,
+        subscriptionStatus: loja.subscription_status || null,
         isCanceling,
       };
     }
@@ -119,9 +153,9 @@ export class SubscriptionService {
     return {
       active: false,
       reason: "expired",
-      trialEndsAt: loja.trial_ends_at,
-      currentPeriodEnd: loja.current_period_end,
-      subscriptionStatus: loja.subscription_status,
+      trialEndsAt: loja.trial_ends_at || null,
+      currentPeriodEnd: loja.current_period_end || null,
+      subscriptionStatus: loja.subscription_status || null,
       isCanceling,
     };
   }
@@ -220,10 +254,11 @@ export class SubscriptionService {
       }
 
       case "customer.subscription.updated": {
-        const subscription = event.data.object as any;
+        const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
-        const periodEnd = subscription.current_period_end
-          ? new Date(subscription.current_period_end * 1000).toISOString()
+        const periodUnix = getStripeSubscriptionPeriodEndUnix(subscription);
+        const periodEnd = periodUnix
+          ? new Date(periodUnix * 1000).toISOString()
           : null;
 
         const { error: updateError } = await supabase
@@ -246,7 +281,7 @@ export class SubscriptionService {
       }
 
       case "customer.subscription.deleted": {
-        const subscription = event.data.object as any;
+        const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
 
         const { error: updateError } = await supabase
@@ -269,7 +304,7 @@ export class SubscriptionService {
       }
 
       case "invoice.payment_failed": {
-        const invoice = event.data.object as any;
+        const invoice = event.data.object as Stripe.Invoice;
         const customerId = invoice.customer as string;
         const { error: updateError } = await supabase
           .from("lojas")
@@ -297,13 +332,13 @@ export class SubscriptionService {
     try {
       const subscription = (await stripe.subscriptions.retrieve(
         subscriptionId,
-      )) as any;
-      if (subscription && typeof subscription.current_period_end === "number") {
-        return new Date(subscription.current_period_end * 1000).toISOString();
+      )) as Stripe.Subscription;
+      const periodUnix = getStripeSubscriptionPeriodEndUnix(subscription);
+      if (periodUnix !== null) {
+        return new Date(periodUnix * 1000).toISOString();
       }
-      // Fallback para billing flexível
-      if (subscription && subscription.created) {
-        const duration = subscription.plan?.interval === "year" ? 366 : 31;
+      if (subscription?.created) {
+        const duration = guessBillingDaysFromSubscription(subscription);
         const date = new Date(subscription.created * 1000);
         date.setDate(date.getDate() + duration);
         return date.toISOString();

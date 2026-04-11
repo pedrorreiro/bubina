@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { SubscriptionStatus } from "@/types";
@@ -7,12 +9,23 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
-  XCircle,
   ExternalLink,
-  Loader2,
   Zap,
   ArrowRight,
 } from "lucide-react";
+import {
+  Box,
+  Flex,
+  Stack,
+  Heading,
+  Text,
+  Center,
+  Progress,
+  Grid,
+  Spinner,
+  HStack,
+} from "@chakra-ui/react";
+import { Button } from "@/components/ui/button";
 
 export function SubscriptionCard() {
   const {
@@ -36,7 +49,7 @@ export function SubscriptionCard() {
     try {
       const { url } = await openPortal();
       if (url) window.open(url, "_blank");
-    } catch (e) {
+    } catch {
       toast.error("Erro ao abrir o portal de assinatura");
     }
     setPortalLoading(false);
@@ -55,8 +68,10 @@ export function SubscriptionCard() {
     try {
       const res = await cancelSubscription();
       toast.success(res.message || "Assinatura cancelada com sucesso.");
-    } catch (e: any) {
-      toast.error(e.message || "Erro ao cancelar assinatura");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Erro ao cancelar assinatura";
+      toast.error(message);
     } finally {
       setCancelLoading(false);
     }
@@ -64,9 +79,11 @@ export function SubscriptionCard() {
 
   if (isLoading) {
     return (
-      <div className="glass-panel p-10 flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-      </div>
+      <Box className="app-panel" overflow="hidden">
+        <Center py="12">
+          <Spinner color="blue.400" size="lg" borderWidth="3px" />
+        </Center>
+      </Box>
     );
   }
 
@@ -77,7 +94,6 @@ export function SubscriptionCard() {
     : 0;
   const msRemaining = Math.max(0, trialEndTime - now);
   const hoursRemaining = msRemaining / (1000 * 60 * 60);
-  const trialDaysRemaining = Math.ceil(hoursRemaining / 24);
 
   const formatTrialTime = () => {
     if (msRemaining <= 0) return "Expirado";
@@ -101,171 +117,260 @@ export function SubscriptionCard() {
     }).format(new Date(dateStr));
   };
 
-  const statusConfig = getStatusConfig(sub, trialDaysRemaining);
+  const statusConfig = getStatusConfig(sub, hoursRemaining / 24);
 
   return (
-    <div className="glass-panel overflow-hidden relative group">
-      {/* Visual Accent */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32 transition-all group-hover:bg-primary/10" />
+    <Box className="app-panel" overflow="hidden" h="full">
+      <Box p={{ base: 5, md: 6 }}>
+        <Flex align="center" gap="3" pb="4" mb="1" borderBottomWidth="1px" borderColor="var(--color-edge)">
+          <Center
+            w="10"
+            h="10"
+            rounded="xl"
+            bg="blue.500/12"
+            color="blue.300"
+            flexShrink={0}
+          >
+            <CreditCard size={20} strokeWidth={1.75} />
+          </Center>
+          <Box minW="0">
+            <Text
+              fontSize="11px"
+              fontWeight="semibold"
+              color="whiteAlpha.500"
+              textTransform="uppercase"
+              letterSpacing="0.06em"
+            >
+              Plano
+            </Text>
+            <Heading size="md" fontWeight="700" letterSpacing="-0.02em" mt="0.5">
+              Assinatura
+            </Heading>
+          </Box>
+        </Flex>
 
-      <div className="relative p-8 sm:p-10">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-10">
-          <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5">
-            <CreditCard size={24} />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-white tracking-tight">
-              Assinatura & Plano
-            </h2>
-            <p className="text-[10px] text-text-dim font-semibold uppercase tracking-widest">
-              Controle de Faturamento
-            </p>
-          </div>
-        </div>
-
-        {/* Status Area */}
-        <div
-          className={`p-6 rounded-2xl border transition-all duration-500 mb-8 ${statusConfig.bgClass}`}
+        <Box
+          p={4}
+          rounded="xl"
+          bg={statusConfig.bg}
+          borderWidth="1px"
+          borderColor={statusConfig.borderColor}
+          mt={5}
+          mb={5}
         >
-          <div className="flex items-center gap-4">
-            <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 ${statusConfig.iconClass}`}
+          <Flex align="center" gap="4">
+            <Center
+              w="10"
+              h="10"
+              borderRadius="xl"
+              bg="whiteAlpha.100"
+              color={statusConfig.color}
             >
               <statusConfig.icon size={20} />
-            </div>
-            <div className="flex-1">
-              <p
-                className={`text-sm font-bold tracking-tight ${statusConfig.textClass}`}
-              >
+            </Center>
+            <Box flex="1">
+              <Text fontSize="sm" fontWeight="bold" color={statusConfig.color}>
                 {statusConfig.label}
-              </p>
-              <p className="text-xs text-text-dim font-medium mt-0.5">
+              </Text>
+              <Text fontSize="xs" color="whiteAlpha.500" mt="0.5">
                 {statusConfig.description}
-              </p>
-              
-              {/* Data de Validade */}
-              {(sub.currentPeriodEnd || (sub.reason === 'trial' && sub.trialEndsAt)) && (
-                <div className="mt-2 flex items-center gap-1.5 py-1 px-2.5 bg-black/20 rounded-lg w-fit border border-white/5">
-                  <span className="text-[10px] font-bold text-white/60 tracking-tight">
-                    Vence em: {formatDate(sub.currentPeriodEnd || sub.trialEndsAt)}
-                  </span>
-                </div>
+              </Text>
+
+              {(sub.currentPeriodEnd ||
+                (sub.reason === "trial" && sub.trialEndsAt)) && (
+                <Box
+                  mt="2"
+                  py="1"
+                  px="2.5"
+                  bg="blackAlpha.200"
+                  borderRadius="lg"
+                  border="1px solid"
+                  borderColor="whiteAlpha.50"
+                  w="fit-content"
+                >
+                  <Text
+                    fontSize="10px"
+                    fontWeight="bold"
+                    color="whiteAlpha.600"
+                  >
+                    Vence em:{" "}
+                    {formatDate(sub.currentPeriodEnd || sub.trialEndsAt)}
+                  </Text>
+                </Box>
               )}
-            </div>
-          </div>
+            </Box>
+          </Flex>
 
           {/* Trial Progress Bar */}
           {sub.reason === "trial" && msRemaining > 0 && (
-            <div className="mt-6 pt-6 border-t border-white/5">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-bold text-text-dim uppercase tracking-wider">
-                  Tempo Restante de Trial
-                </span>
-                <span className="text-xs font-bold text-primary tabular-nums">
+            <Box
+              mt="6"
+              pt="6"
+              borderTop="1px solid"
+              borderColor="whiteAlpha.50"
+            >
+              <Flex justify="space-between" align="center" mb="2">
+                <Text
+                  fontSize="10px"
+                  fontWeight="bold"
+                  color="whiteAlpha.400"
+                  textTransform="uppercase"
+                >
+                  Tempo Restante
+                </Text>
+                <Text fontSize="xs" fontWeight="bold" color="blue.400">
                   {formatTrialTime()}
-                </span>
-              </div>
-              <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
-                <div
-                  className="h-full bg-primary to-primary-light rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(59,130,246,0.4)]"
-                  style={{
-                    width: `${Math.min(100, (hoursRemaining / 72) * 100)}%`,
-                  }}
-                />
-              </div>
-            </div>
+                </Text>
+              </Flex>
+              <Progress.Root
+                value={Math.min(100, (hoursRemaining / 72) * 100)}
+                colorPalette="blue"
+                size="xs"
+                borderRadius="full"
+              >
+                <Progress.Track bg="blackAlpha.400" borderRadius="full" h="1.5">
+                  <Progress.Range borderRadius="full" />
+                </Progress.Track>
+              </Progress.Root>
+            </Box>
           )}
-        </div>
+        </Box>
 
-        {/* Actions & Plan Info */}
-        <div className="space-y-4">
+        <Stack gap={3}>
           {sub.reason === "manual" ? (
-            <div className="bg-primary/10 border border-primary/20 p-6 rounded-2xl flex flex-col items-center text-center gap-3">
-              <CheckCircle2 size={24} className="text-primary" />
-              <div>
-                <p className="text-sm font-bold text-white uppercase tracking-widest mb-1">
+            <Stack
+              align="center"
+              p={4}
+              bg="blue.500/8"
+              rounded="xl"
+              borderWidth="1px"
+              borderColor="blue.400/20"
+              textAlign="center"
+              gap={3}
+            >
+              <CheckCircle2 size={24} className="text-blue-400" />
+              <Box>
+                <Text fontSize="sm" fontWeight="bold" textTransform="uppercase">
                   Acesso Bubina Pro
-                </p>
-                <p className="text-[10px] text-text-dim font-medium uppercase tracking-tighter">
-                  Sua conta possui acesso ilimitado concedido manualmente.
-                </p>
-              </div>
-            </div>
+                </Text>
+                <Text
+                  fontSize="10px"
+                  color="whiteAlpha.400"
+                  textTransform="uppercase"
+                >
+                  Acesso vitalício concedido pela administração.
+                </Text>
+              </Box>
+            </Stack>
           ) : sub.reason === "paid" ? (
-            <div className="space-y-4">
-              <button
+            <Stack gap="4">
+              <Button
+                variant="subtle"
+                h="11"
+                rounded="lg"
                 onClick={handleOpenPortal}
                 disabled={portalLoading}
-                className="w-full h-[60px] flex items-center justify-center gap-3 rounded-2xl bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20 transition-all text-xs font-bold uppercase tracking-widest disabled:opacity-30 group"
+                bg="whiteAlpha.50"
+                fontWeight="semibold"
+                _hover={{ bg: "whiteAlpha.100" }}
               >
                 {portalLoading ? (
-                  <Loader2 size={16} className="animate-spin" />
+                  <Spinner size="sm" />
                 ) : (
-                  <ExternalLink
-                    size={16}
-                    className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                  />
+                  <ExternalLink size={16} />
                 )}
-                Gerenciar no Portal Stripe
-              </button>
+                Gerenciar Assinatura
+              </Button>
 
               {!sub.isCanceling && (
-                <button
+                <Button
+                  variant="ghost"
+                  colorPalette="red"
+                  size="xs"
                   onClick={handleCancelPlan}
                   disabled={cancelLoading}
-                  className="w-full py-4 text-[10px] font-bold text-red/40 hover:text-red transition-colors uppercase tracking-widest disabled:opacity-30"
+                  fontSize="10px"
+                  fontWeight="bold"
+                  textTransform="uppercase"
                 >
                   {cancelLoading ? "Processando..." : "Cancelar Assinatura"}
-                </button>
+                </Button>
               )}
-            </div>
+            </Stack>
           ) : (
-            <div className="space-y-6">
-              <div className="bg-black/20 p-6 rounded-2xl border border-white/5">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-1.5 h-6 bg-primary/40 rounded-full" />
-                  <span className="text-xs font-bold text-white uppercase tracking-widest">
-                    Vantagens do Plano Pro
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6">
+            <Stack gap="6">
+              <Box
+                p={4}
+                bg="whiteAlpha.50"
+                rounded="xl"
+                borderWidth="1px"
+                borderColor="whiteAlpha.100"
+              >
+                <HStack mb="4">
+                  <Box w="1.5" h="6" bg="blue.400/40" borderRadius="full" />
+                  <Text
+                    fontSize="xs"
+                    fontWeight="bold"
+                    textTransform="uppercase"
+                  >
+                    Vantagens do Pro
+                  </Text>
+                </HStack>
+                <Grid
+                  templateColumns={{ base: "1fr", sm: "1fr 1fr" }}
+                  gapY="3"
+                  gapX="6"
+                >
                   {[
                     "Impressões Ilimitadas",
-                    "Catálogo de Produtos",
-                    "Logomarca no Cupom",
-                    "Suporte Prioritário",
+                    "Catálogo Custom",
+                    "Logo no Cupom",
+                    "Suporte 24h",
                   ].map((feat, i) => (
-                    <div key={i} className="flex items-center gap-2.5">
-                      <CheckCircle2 size={14} className="text-primary" />
-                      <span className="text-[11px] font-semibold text-text-muted">
+                    <HStack key={i} gap="2.5">
+                      <CheckCircle2 size={14} className="text-blue-400" />
+                      <Text
+                        fontSize="11px"
+                        fontWeight="semibold"
+                        color="whiteAlpha.600"
+                      >
                         {feat}
-                      </span>
-                    </div>
+                      </Text>
+                    </HStack>
                   ))}
-                </div>
-              </div>
+                </Grid>
+              </Box>
 
-              <a
-                href="/paywall"
-                className="btn-primary w-full h-[68px] flex items-center justify-center gap-3 shadow-2xl active:scale-[0.98] group"
+              <Button
+                asChild
+                h="12"
+                colorPalette="blue"
+                rounded="xl"
+                fontWeight="700"
               >
-                <Zap size={18} className="fill-white" />
-                <div className="flex flex-col items-start leading-tight">
-                  <span className="text-[13px] font-bold uppercase tracking-widest">
-                    Assinar Bubina Pro
-                  </span>
-                </div>
-                <ArrowRight
-                  size={18}
-                  className="ml-auto opacity-40 transition-transform group-hover:translate-x-1"
-                />
-              </a>
-            </div>
+                <a href="/paywall">
+                  <Zap size={18} />
+                  <Box textAlign="left">
+                    <Text
+                      fontSize="xs"
+                      fontWeight="bold"
+                      textTransform="uppercase"
+                      lineHeight="1"
+                    >
+                      Assinar Bubina Pro
+                    </Text>
+                    <Text fontSize="9px" color="whiteAlpha.600" mt="1">
+                      Libere todos os recursos agora
+                    </Text>
+                  </Box>
+                  <ArrowRight size={18} />
+                </a>
+              </Button>
+            </Stack>
           )}
-        </div>
-      </div>
-    </div>
+        </Stack>
+      </Box>
+    </Box>
   );
 }
 
@@ -273,24 +378,22 @@ function getStatusConfig(sub: SubscriptionStatus, trialDays: number) {
   if (sub.reason === "manual") {
     return {
       icon: CheckCircle2,
-      label: "Acesso Premium Vitalício",
-      description:
-        "Você possui acesso total e permanente aos recursos do Bubina.",
-      bgClass: "bg-primary/5 border-primary/20",
-      iconClass: "text-primary",
-      textClass: "text-primary",
+      label: "Premium Vitalício",
+      description: "Acesso permanente a todos os recursos.",
+      bg: "blue.500/5",
+      borderColor: "blue.500/20",
+      color: "blue.400",
     };
   }
 
   if (sub.isCanceling) {
     return {
       icon: Clock,
-      label: "Cancelamento Programado",
-      description:
-        "Sua assinatura não será renovada, mas o acesso Pro continua garantido até o fim do ciclo.",
-      bgClass: "bg-red/5 border-red/20",
-      iconClass: "text-red",
-      textClass: "text-red",
+      label: "Cancelamento em Curso",
+      description: "Acesso Pro garantido até o fim do ciclo.",
+      bg: "red.500/5",
+      borderColor: "red.500/20",
+      color: "red.400",
     };
   }
 
@@ -298,21 +401,20 @@ function getStatusConfig(sub: SubscriptionStatus, trialDays: number) {
     if (trialDays <= 1) {
       return {
         icon: Zap,
-        label: "Avaliação Pro Terminando",
-        description:
-          "Seu período de recursos liberados está acabando. Mantenha-os ativos assinando agora!",
-        bgClass: "bg-yellow/5 border-yellow/20",
-        iconClass: "text-yellow",
-        textClass: "text-yellow",
+        label: "Avaliação Expirando",
+        description: "Assine para manter seus recursos Pro.",
+        bg: "orange.500/5",
+        borderColor: "orange.500/20",
+        color: "orange.400",
       };
     }
     return {
       icon: Zap,
-      label: "Recursos Pro Liberados",
-      description: `Você está num período de teste. Aproveite os recursos Pro!`,
-      bgClass: "bg-primary/5 border-primary/20",
-      iconClass: "text-primary",
-      textClass: "text-primary",
+      label: "Avaliação Gratuita",
+      description: `Aproveite os recursos Pro sem limites.`,
+      bg: "blue.500/5",
+      borderColor: "blue.500/20",
+      color: "blue.400",
     };
   }
 
@@ -320,30 +422,29 @@ function getStatusConfig(sub: SubscriptionStatus, trialDays: number) {
     if (sub.subscriptionStatus === "past_due") {
       return {
         icon: AlertTriangle,
-        label: "Pagamento Pendente",
-        description: "Houve um problema com o pagamento. Atualize seu método.",
-        bgClass: "bg-yellow/5 border-yellow/20",
-        iconClass: "text-yellow",
-        textClass: "text-yellow",
+        label: "Pendente",
+        description: "Houve um problema com o pagamento.",
+        bg: "orange.500/5",
+        borderColor: "orange.500/20",
+        color: "orange.400",
       };
     }
     return {
       icon: CheckCircle2,
-      label: "Plano Ativo",
-      description: "Sua assinatura está ativa e em dia.",
-      bgClass: "bg-green/5 border-green/20",
-      iconClass: "text-green",
-      textClass: "text-green",
+      label: "Plano Pro Ativo",
+      description: "Sua assinatura está em dia.",
+      bg: "green.500/5",
+      borderColor: "green.500/20",
+      color: "green.400",
     };
   }
 
   return {
     icon: Zap,
-    label: "Plano Starter (Grátis)",
-    description:
-      "Você está no plano básico com limites de impressão e recursos.",
-    bgClass: "bg-white/5 border-border",
-    iconClass: "text-text-muted",
-    textClass: "text-white",
+    label: "Plano Starter",
+    description: "Você está no plano básico gratuito.",
+    bg: "whiteAlpha.50",
+    borderColor: "whiteAlpha.100",
+    color: "whiteAlpha.600",
   };
 }

@@ -21,10 +21,11 @@ export async function GET() {
     const status = await SubscriptionService.getSubscription(supabase, user.id);
 
     return NextResponse.json(status);
-  } catch (error: any) {
+  } catch (error) {
     console.error("❌ [API/Subscription] ERRO:", error);
+    const message = error instanceof Error ? error.message : "Erro interno";
     return NextResponse.json(
-      { error: error.message || "Erro interno" },
+      { error: message },
       { status: 500 },
     );
   }

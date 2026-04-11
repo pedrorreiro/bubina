@@ -8,7 +8,6 @@ import {
   Shield,
   ArrowLeft,
   CheckCircle2,
-  ArrowRight,
   X,
   Check,
 } from "lucide-react";
@@ -78,7 +77,7 @@ export default function PaywallPage() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-[#020305] px-4 py-12 md:px-6 md:py-20 relative overflow-x-hidden">
+    <div className="app-page-gutter min-h-dvh flex flex-col items-center bg-[#020305] py-12 md:py-20 relative overflow-x-hidden">
       {/* Background Decor - Cinematic Mesh */}
       <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[140px] pointer-events-none animate-pulse duration-[10s]" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[140px] pointer-events-none" />

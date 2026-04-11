@@ -39,10 +39,11 @@ export async function POST(req: NextRequest) {
     );
 
     return NextResponse.json(result);
-  } catch (e: any) {
-    console.error("❌ [Checkout] Erro:", e.message);
+  } catch (e) {
+    const error = e as Error;
+    console.error("❌ [Checkout] Erro:", error.message);
     return NextResponse.json(
-      { error: e.message || "Erro ao criar checkout" },
+      { error: error.message || "Erro ao criar checkout" },
       { status: 400 }
     );
   }

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -18,18 +18,41 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import {
-  ShoppingCart,
-  User,
-  Tag,
-  ArrowUpDown,
   Plus,
   Printer as PrinterIcon,
   GripVertical,
   X,
-  FileText,
   Eye,
   Lock,
+  Tag,
+  RotateCcw,
+  User,
 } from "lucide-react";
+
+import {
+  Box,
+  Flex,
+  HStack,
+  VStack,
+  Text,
+  IconButton,
+  Grid,
+  Circle,
+  Separator,
+  Center,
+  Stack,
+  Input as ChakraInput,
+} from "@chakra-ui/react";
+import { Button } from "@/components/ui/button";
+import {
+  DialogRoot,
+  DialogHeader,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogContent,
+  DialogCloseTrigger,
+} from "@/components/ui/dialog";
 
 import type { ItemPedido, Desconto, Pedido, Produto } from "@/types";
 import { useApp } from "@/context/AppContext";
@@ -39,12 +62,12 @@ import { gerarPreview } from "@/services/cupom";
 import { LivePreview } from "./LivePreview";
 import { maskCPF } from "@/lib/utils";
 
-interface OrderTabProps {}
+const selectOnFocus = (e: React.FocusEvent<HTMLInputElement>) =>
+  e.target.select();
 
-// ── Sortable Item Component ──────────────────────────────────────────────────
-
-// Define numeric input fix handler
-const selectOnFocus = (e: React.FocusEvent<HTMLInputElement>) => e.target.select();
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sortable Item — linha compacta da comanda
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 interface SortableItemProps {
   id: string;
@@ -55,6 +78,23 @@ interface SortableItemProps {
   onUpdatePreco: (idx: number, val: string) => void;
   onRemove: (idx: number) => void;
 }
+
+const inputProps = {
+  variant: "subtle" as const,
+  bg: "whiteAlpha.50",
+  borderWidth: "1px",
+  borderColor: "whiteAlpha.100",
+  borderRadius: "lg",
+  fontSize: "13px",
+  fontWeight: "500",
+  h: "10",
+  px: "3",
+  _focus: {
+    borderColor: "blue.400/55",
+    bg: "whiteAlpha.80",
+  },
+  _placeholder: { color: "whiteAlpha.300" },
+};
 
 function SortableItem({
   id,
@@ -74,98 +114,247 @@ function SortableItem({
     isDragging,
   } = useSortable({ id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  const style = { transform: CSS.Transform.toString(transform), transition };
+
+  const dragHandle = (
+    <Box
+      cursor="grab"
+      _active={{ cursor: "grabbing" }}
+      color="whiteAlpha.300"
+      _hover={{ color: "whiteAlpha.600" }}
+      flexShrink={0}
+      alignSelf={{ base: "flex-start", lg: "center" }}
+      mt={{ base: "0.5", lg: 0 }}
+      {...attributes}
+      {...listeners}
+    >
+      <GripVertical size={14} />
+    </Box>
+  );
 
   return (
-    <div
+    <Flex
       ref={setNodeRef}
       style={style}
-      className={`
-        flex gap-3 p-4 rounded-2xl transition-all duration-300 group
-        ${
-          isDragging
-            ? "z-[1001] bg-surface-raised border border-primary/40 shadow-2xl opacity-90 scale-[1.03] ring-1 ring-primary/20"
-            : "bg-white/[0.02] border border-white/[0.03] hover:bg-white/[0.05] hover:border-white/[0.08]"
-        }
-      `}
+      align={{ base: "flex-start", lg: "center" }}
+      gap={{ base: 2, lg: 3 }}
+      py="3"
+      px="4"
+      rounded="xl"
+      bg={isDragging ? "whiteAlpha.100" : "transparent"}
+      borderWidth="1px"
+      borderColor={isDragging ? "whiteAlpha.200" : "transparent"}
+      opacity={isDragging ? 0.85 : 1}
+      zIndex={isDragging ? 1001 : 1}
+      _hover={{ bg: "whiteAlpha.50" }}
+      transition="background 0.15s"
     >
-      {/* Column 1: Grip Handle */}
-      <div
-        className="cursor-grab active:cursor-grabbing p-1.5 text-text-dim/60 hover:text-primary transition-colors h-fit mt-0.5 rounded-lg shrink-0"
-        {...attributes}
-        {...listeners}
+      {dragHandle}
+
+      {/* Mobile: um bloco só — evita nome duplicado (display em Text às vezes não some no Chakra) */}
+      <VStack
+        display={{ base: "flex", lg: "none" }}
+        flex="1"
+        gap={3}
+        minW="0"
+        w="full"
+        align="stretch"
       >
-        <GripVertical size={16} />
-      </div>
-
-      {/* Column 2: Content */}
-      <div className="flex-1 min-w-0 flex flex-col gap-3">
-        {/* Top: Name & Total */}
-        <div className="flex justify-between items-start gap-3">
-          <div className="text-[13px] font-bold text-white/90 leading-tight pr-2">
+        <Flex align="flex-start" justify="space-between" gap="2" w="full">
+          <Text
+            flex="1"
+            minW="0"
+            fontSize="15px"
+            fontWeight="600"
+            lineHeight="short"
+            color="whiteAlpha.900"
+            style={{ overflowWrap: "anywhere" }}
+          >
             {item.nome}
-          </div>
-          <div className="text-[14px] font-black text-primary tabular-nums tracking-tight shrink-0">
-            R$ {sub.toFixed(2).replace(".", ",")}
-          </div>
-        </div>
+          </Text>
+          <IconButton
+            variant="ghost"
+            size="sm"
+            rounded="lg"
+            color="whiteAlpha.400"
+            aria-label="Remover"
+            flexShrink={0}
+            onClick={() => onRemove(idx)}
+            _hover={{ color: "red.400", bg: "red.500/10" }}
+          >
+            <X size={16} />
+          </IconButton>
+        </Flex>
 
-        {/* Bottom: Underlined Controls */}
-        <div className="flex items-end justify-between">
-          <div className="flex items-end gap-5">
-            {/* Qtd */}
-            <div className="flex items-center">
-              <span className="text-[8px] font-bold text-text-dim/60 uppercase tracking-widest mr-2 mb-0.5">
-                Qtd
-              </span>
-              <input
-                className="w-10 h-7 bg-transparent border-b border-white/10 hover:border-white/30 focus:border-primary text-center text-xs font-bold text-white outline-none transition-colors"
-                type="number"
-                value={item.qtd === 0 || item.qtd === null ? "" : item.qtd}
-                onChange={(e) => onUpdateQtd(idx, e.target.value)}
-                onFocus={selectOnFocus}
-                placeholder="0"
-              />
-            </div>
-
-            {/* V. Unit */}
-            <div className="flex items-center">
-              <span className="text-[8px] font-bold text-text-dim/60 uppercase tracking-widest mr-2 mb-0.5">
+        <Flex align="center" gap="3" w="full">
+          <HStack gap="2" flex="1" minW="0" align="center">
+            <ChakraInput
+              {...inputProps}
+              w="16"
+              minW="16"
+              textAlign="center"
+              fontSize="15px"
+              fontWeight="600"
+              type="number"
+              inputMode="numeric"
+              value={item.qtd === 0 || item.qtd === null ? "" : item.qtd}
+              onChange={(e) => onUpdateQtd(idx, e.target.value)}
+              onFocus={selectOnFocus}
+              placeholder="Qtd"
+              aria-label="Quantidade"
+            />
+            <Text fontSize="sm" color="whiteAlpha.400" flexShrink={0}>
+              ×
+            </Text>
+            <Box position="relative" flex="1" minW="0">
+              <Text
+                position="absolute"
+                left="3"
+                top="50%"
+                transform="translateY(-50%)"
+                fontSize="14px"
+                fontWeight="600"
+                color="whiteAlpha.500"
+                pointerEvents="none"
+                userSelect="none"
+                zIndex={1}
+              >
                 R$
-              </span>
-              <input
-                className="w-14 h-7 bg-transparent border-b border-white/10 hover:border-white/30 focus:border-primary text-center text-xs font-bold text-white outline-none transition-colors"
+              </Text>
+              <ChakraInput
+                {...inputProps}
+                w="full"
+                pl="10"
+                textAlign="right"
+                fontSize="15px"
+                fontWeight="600"
                 type="number"
+                inputMode="decimal"
                 value={item.preco_uni === 0 ? "" : item.preco_uni}
                 onChange={(e) => onUpdatePreco(idx, e.target.value)}
                 onFocus={selectOnFocus}
-                placeholder="0.00"
+                placeholder="0,00"
+                aria-label="Preço unitário"
+                step="0.01"
               />
-            </div>
-          </div>
-
-          <button
-            className="w-7 h-7 flex items-center justify-center text-text-dim/30 hover:text-red hover:bg-red/10 rounded ml-2 transition-all"
-            onClick={() => onRemove(idx)}
+            </Box>
+          </HStack>
+          <Text
+            fontSize="16px"
+            fontWeight="800"
+            color="white"
+            flexShrink={0}
+            minW="4.5rem"
+            textAlign="right"
+            fontVariantNumeric="tabular-nums"
           >
-            <X size={15} />
-          </button>
-        </div>
-      </div>
-    </div>
+            {sub.toFixed(2).replace(".", ",")}
+          </Text>
+        </Flex>
+      </VStack>
+
+      {/* Desktop: linha compacta */}
+      <Flex
+        display={{ base: "none", lg: "flex" }}
+        flex="1"
+        align="center"
+        gap="3"
+        minW="0"
+        w="full"
+      >
+        <Text flex="1" minW="0" fontSize="13px" fontWeight="500" lineClamp={1}>
+          {item.nome}
+        </Text>
+
+        <HStack gap="1" flexShrink={0} align="center">
+          <ChakraInput
+            variant="flushed"
+            w="8"
+            h="6"
+            textAlign="center"
+            fontSize="12px"
+            fontWeight="600"
+            value={item.qtd === 0 || item.qtd === null ? "" : item.qtd}
+            onChange={(e) => onUpdateQtd(idx, e.target.value)}
+            onFocus={selectOnFocus}
+            placeholder="–"
+            borderBottomColor="whiteAlpha.100"
+            _focus={{ borderBottomColor: "blue.400" }}
+            color="whiteAlpha.700"
+          />
+          <Text fontSize="10px" color="whiteAlpha.300">
+            ×
+          </Text>
+          <Box position="relative" w="16" minW="16" flexShrink={0}>
+            <Text
+              position="absolute"
+              left="0"
+              top="50%"
+              transform="translateY(-50%)"
+              fontSize="11px"
+              fontWeight="600"
+              color="whiteAlpha.500"
+              pointerEvents="none"
+              userSelect="none"
+              zIndex={1}
+              lineHeight="1"
+            >
+              R$
+            </Text>
+            <ChakraInput
+              variant="flushed"
+              w="full"
+              pl="6"
+              h="6"
+              textAlign="right"
+              fontSize="12px"
+              fontWeight="600"
+              value={item.preco_uni === 0 ? "" : item.preco_uni}
+              onChange={(e) => onUpdatePreco(idx, e.target.value)}
+              onFocus={selectOnFocus}
+              placeholder="0.00"
+              borderBottomColor="whiteAlpha.100"
+              _focus={{ borderBottomColor: "blue.400" }}
+              color="whiteAlpha.700"
+            />
+          </Box>
+        </HStack>
+
+        <Text
+          fontSize="13px"
+          fontWeight="700"
+          color="white"
+          w="20"
+          textAlign="right"
+          flexShrink={0}
+          fontVariantNumeric="tabular-nums"
+        >
+          {sub.toFixed(2).replace(".", ",")}
+        </Text>
+
+        <IconButton
+          variant="ghost"
+          size="2xs"
+          color="whiteAlpha.200"
+          aria-label="Remover"
+          onClick={() => onRemove(idx)}
+          _hover={{ color: "red.400", bg: "red.500/10" }}
+        >
+          <X size={14} />
+        </IconButton>
+      </Flex>
+    </Flex>
   );
 }
 
-// ── Main Component ───────────────────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════════════════
+   Main Component
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-export function OrderTab({}: OrderTabProps) {
+export function OrderTab() {
   const {
     produtos,
     loja,
-    setLoja,
     printerStatus,
     printCupom,
     pedidoReaberto,
@@ -181,7 +370,6 @@ export function OrderTab({}: OrderTabProps) {
   const [finished, setFinished] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  // Form states
   const [avNome, setAvNome] = useState("");
   const [avQtd, setAvQtd] = useState("");
   const [avPreco, setAvPreco] = useState("");
@@ -191,6 +379,13 @@ export function OrderTab({}: OrderTabProps) {
   const [dValor, setDValor] = useState("");
 
   const [mobileView, setMobileView] = useState<"venda" | "cardapio">("venda");
+  const [mounted, setMounted] = useState(false);
+  const [stableDate, setStableDate] = useState<Date | undefined>(undefined);
+
+  useEffect(() => {
+    setMounted(true);
+    setStableDate(new Date());
+  }, []);
 
   const genId = () => Math.random().toString(36).substr(2, 9);
 
@@ -234,14 +429,37 @@ export function OrderTab({}: OrderTabProps) {
     total: calcTotal(),
   });
 
-  const preview = gerarPreview(buildPedido(), loja, isPremium);
+  const preview = mounted
+    ? gerarPreview(buildPedido(), loja, isPremium, stableDate)
+    : "";
 
   const addFromCatalog = (p: Produto) => {
-    setItens((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), nome: p.nome, qtd: 1, preco_uni: p.preco },
-    ]);
-    toast.info(`${p.nome} adicionado!`);
+    let aumentouQtd = false;
+    setItens((prev) => {
+      const idx = prev.findIndex((i) => i.produtoCatalogoId === p.id);
+      if (idx >= 0) {
+        aumentouQtd = true;
+        const cur = prev[idx];
+        const base =
+          cur.qtd === null || cur.qtd === undefined || Number.isNaN(cur.qtd)
+            ? 1
+            : cur.qtd;
+        const next = [...prev];
+        next[idx] = { ...cur, qtd: base + 1 };
+        return next;
+      }
+      return [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          nome: p.nome,
+          qtd: 1,
+          preco_uni: p.preco,
+          produtoCatalogoId: p.id,
+        },
+      ];
+    });
+    toast.info(aumentouQtd ? `${p.nome} — +1 unidade` : `${p.nome} adicionado`);
   };
 
   const addManual = () => {
@@ -273,7 +491,7 @@ export function OrderTab({}: OrderTabProps) {
   const handleAddDesconto = () => {
     const val = parseFloat(dValor);
     if (!dValor || isNaN(val) || val <= 0) {
-      toast.error("Digite um valor válido");
+      toast.error("Valor inválido");
       return;
     }
     setDescontos((prev) => [...prev, { nome: dNome, tipo: dTipo, valor: val }]);
@@ -291,16 +509,14 @@ export function OrderTab({}: OrderTabProps) {
         toast.error("Adicione itens primeiro");
         return;
       }
-
       setPrinting(true);
-      const p: Pedido = {
+      await printCupom({
         cpf: cpf?.trim() || null,
         itens,
         descontos,
         total: calcTotal(),
-      };
-      await printCupom(p);
-      toast.success("Cupom impresso! 🎉");
+      });
+      toast.success("Cupom impresso!");
       handleNovoPedido();
     } catch (e) {
       toast.error(`Erro: ${e instanceof Error ? e.message : e}`);
@@ -314,7 +530,6 @@ export function OrderTab({}: OrderTabProps) {
     setDescontos([]);
     setCpf("");
     setFinished(false);
-    toast.info("Novo pedido iniciado");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -323,111 +538,169 @@ export function OrderTab({}: OrderTabProps) {
 
   const subtotal = calcSubtotal();
   const total = calcTotal();
+  const hasDescontos = descontos.length > 0;
+
+  /* ── Input shared style ─────────────────────────────────────────────────── */
+  const inputStyle = {
+    bg: "whiteAlpha.50",
+    borderWidth: "1px",
+    borderColor: "whiteAlpha.100",
+    borderRadius: "lg",
+    fontSize: "13px",
+    fontWeight: "500",
+    _focus: { borderColor: "blue.400/60", bg: "whiteAlpha.100" },
+    _placeholder: { color: "whiteAlpha.300" },
+    transition: "all 0.15s",
+  } as const;
 
   return (
-    <div className="flex flex-col h-full lg:max-h-[calc(100vh-120px)] lg:overflow-hidden lg:pt-4">
-      {/* Mobile View Switcher */}
-      <div className="flex lg:hidden p-1 mt-4 bg-white/5 rounded-2xl border border-white/10 mb-6 gap-1 shadow-2xl">
-        <button
-          onClick={() => setMobileView("venda")}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-500 font-bold text-xs uppercase tracking-widest ${
-            mobileView === "venda"
-              ? "bg-primary text-white shadow-lg shadow-primary/20"
-              : "text-text-dim hover:bg-white/5"
-          }`}
-        >
-          <ShoppingCart
-            size={14}
-            className={mobileView === "venda" ? "animate-bounce-short" : ""}
-          />
-          Comanda
-          {itens.length > 0 && (
-            <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">
-              {itens.length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setMobileView("cardapio")}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-500 font-bold text-xs uppercase tracking-widest ${
-            mobileView === "cardapio"
-              ? "bg-primary text-white shadow-lg shadow-primary/20"
-              : "text-text-dim hover:bg-white/5"
-          }`}
-        >
-          <Plus
-            size={14}
-            className={
-              mobileView === "cardapio"
-                ? "rotate-90 transition-transform duration-500"
-                : ""
-            }
-          />
-          Adicionar
-        </button>
-      </div>
+    <Flex
+      direction="column"
+      h="full"
+      maxH={{ lg: "calc(100dvh - 7.5rem)" }}
+      overflow={{ lg: "hidden" }}
+    >
+      {/* ── Mobile tab bar ────────────────────────────────────────────────── */}
+      <HStack
+        display={{ base: "flex", lg: "none" }}
+        bg="whiteAlpha.50"
+        p="1"
+        rounded="lg"
+        gap="1"
+        mb="4"
+        borderWidth="1px"
+        borderColor="whiteAlpha.100"
+      >
+        {[
+          { key: "venda" as const, label: "Comanda", count: itens.length },
+          { key: "cardapio" as const, label: "Adicionar", count: 0 },
+        ].map((t) => (
+          <Button
+            key={t.key}
+            flex="1"
+            h="10"
+            rounded="md"
+            variant={mobileView === t.key ? "solid" : "ghost"}
+            colorPalette={mobileView === t.key ? "blue" : undefined}
+            fontSize="13px"
+            fontWeight="600"
+            onClick={() => setMobileView(t.key)}
+          >
+            {t.label}
+            {t.count > 0 && (
+              <Box
+                ml="1.5"
+                px="1.5"
+                rounded="full"
+                bg="whiteAlpha.200"
+                fontSize="11px"
+                fontWeight="700"
+                lineHeight="1.6"
+              >
+                {t.count}
+              </Box>
+            )}
+          </Button>
+        ))}
+      </HStack>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-8 items-start pb-8 lg:pb-0 flex-1 overflow-hidden">
-        {/* ── LEFT COLUMN: THE ACTIVE TICKET (BILL) ──────────────────────── */}
-        <div
-          className={`flex flex-col lg:h-full glass-panel lg:overflow-hidden border-white/[0.08] shadow-[0_30px_90px_rgba(0,0,0,0.6)] ${
-            mobileView !== "venda" ? "hidden lg:flex" : "flex"
-          }`}
+      {/* ── Two-column grid ───────────────────────────────────────────────── */}
+      <Grid
+        templateColumns={{ base: "1fr", lg: "380px 1fr" }}
+        gap={{ base: "0", lg: "6" }}
+        flex="1"
+        minH="0"
+        overflow="hidden"
+      >
+        {/* ════════════════════════════════════════════════════════════════
+           LEFT — Comanda (ticket / receipt builder)
+           ════════════════════════════════════════════════════════════════ */}
+        <Flex
+          direction="column"
+          display={{
+            base: mobileView === "venda" ? "flex" : "none",
+            lg: "flex",
+          }}
+          bg="var(--color-surface)"
+          rounded={{ base: "xl", lg: "2xl" }}
+          borderWidth="1px"
+          borderColor="var(--color-edge)"
+          overflow="hidden"
+          maxH={{ lg: "100%" }}
         >
-          {/* Ticket Header: Identification */}
-          <div className="p-8 border-b border-white/[0.05] bg-white/[0.02]">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-                  <ShoppingCart size={20} />
-                </div>
-                <h2 className="text-xl font-bold text-white tracking-tight">
-                  Venda Atual
-                </h2>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsPreviewOpen(true)}
-                  className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-white transition-all shadow-lg shadow-primary/10"
-                  title="Ver Preview do Cupom"
+          {/* Header */}
+          <Flex
+            align="center"
+            justify="space-between"
+            px="5"
+            py="4"
+            flexShrink={0}
+          >
+            <HStack gap="2">
+              <Text fontSize="15px" fontWeight="700" letterSpacing="-0.02em">
+                Comanda
+              </Text>
+              {itens.length > 0 && (
+                <Box
+                  px="2"
+                  py="0.5"
+                  rounded="md"
+                  bg="blue.500/15"
+                  fontSize="11px"
+                  fontWeight="700"
+                  color="blue.300"
                 >
-                  <Eye size={18} />
-                </button>
-                {itens.length > 1 && (
-                  <button
-                    onClick={() => setItens((prev) => [...prev].reverse())}
-                    className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-text-muted hover:text-white transition-all hover:bg-white/10"
-                    title="Inverter Ordem"
-                  >
-                    <ArrowUpDown size={16} />
-                  </button>
-                )}
-              </div>
-            </div>
+                  {itens.length} {itens.length === 1 ? "item" : "itens"}
+                </Box>
+              )}
+            </HStack>
+            <HStack gap="1">
+              <IconButton
+                variant="ghost"
+                size="sm"
+                rounded="lg"
+                color="whiteAlpha.400"
+                onClick={() => setIsPreviewOpen(true)}
+                aria-label="Preview"
+              >
+                <Eye size={16} />
+              </IconButton>
+            </HStack>
+          </Flex>
 
-            <div className="relative group">
-              <User
-                size={14}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-text-dim group-focus-within:text-primary transition-colors"
-              />
-              <input
-                className="w-full bg-black/40 border border-white/5 rounded-2xl pl-11 pr-4 py-4 text-sm font-bold text-white focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-text-dim/30"
-                value={cpf}
-                onChange={(e) => setCpf(maskCPF(e.target.value))}
-                placeholder="CPF do Cliente (Opcional)"
-              />
-            </div>
-          </div>
+          {/* CPF inline */}
+          <Flex px="5" pb="3" gap="2" align="center" flexShrink={0}>
+            <User size={13} color="var(--color-text-dim)" />
+            <ChakraInput
+              variant="flushed"
+              flex="1"
+              fontSize="13px"
+              fontWeight="500"
+              value={cpf}
+              onChange={(e) => setCpf(maskCPF(e.target.value))}
+              placeholder="CPF (opcional)"
+              borderBottomColor="whiteAlpha.100"
+              _focus={{ borderBottomColor: "blue.400" }}
+              _placeholder={{ color: "whiteAlpha.300" }}
+            />
+          </Flex>
 
-          {/* Ticket Body: Items List (Scrollable) */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar min-h-0 bg-black/10">
+          <Separator borderColor="var(--color-edge)" />
+
+          {/* Item list */}
+          <Box
+            flex="1"
+            overflowY="auto"
+            minH="0"
+            py="1"
+            pb={{ base: 4, md: 1 }}
+          >
             {itens.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 lg:py-20 text-center opacity-40">
-                <ShoppingCart size={40} className="mb-4" />
-                <p className="text-sm font-semibold uppercase tracking-widest text-text-dim">
-                  Ticket Vazio
-                </p>
-              </div>
+              <Center flexDir="column" py="16" opacity={0.4}>
+                <Text fontSize="13px" fontWeight="500" color="whiteAlpha.500">
+                  Comanda vazia
+                </Text>
+              </Center>
             ) : (
               <DndContext
                 sensors={sensors}
@@ -439,383 +712,596 @@ export function OrderTab({}: OrderTabProps) {
                   items={itens.map((it) => it.id!)}
                   strategy={verticalListSortingStrategy}
                 >
-                  {itens.map((item, idx) => {
-                    const sub =
-                      item.qtd === null
-                        ? item.preco_uni
-                        : (item.qtd ?? 1) * item.preco_uni;
-                    return (
-                      <SortableItem
-                        key={item.id}
-                        id={item.id!}
-                        item={item}
-                        sub={sub}
-                        idx={idx}
-                        onUpdateQtd={(i, v) =>
-                          setItens((p) =>
-                            p.map((it, x) =>
-                              x === i
-                                ? { ...it, qtd: v === "" ? null : parseInt(v) }
-                                : it,
-                            ),
-                          )
-                        }
-                        onUpdatePreco={(i, v) =>
-                          setItens((p) =>
-                            p.map((it, x) =>
-                              x === i
-                                ? { ...it, preco_uni: v === "" ? 0 : parseFloat(v) }
-                                : it,
-                            ),
-                          )
-                        }
-                        onRemove={(i) =>
-                          setItens((p) => p.filter((_, x) => x !== i))
-                        }
-                      />
-                    );
-                  })}
+                  <Stack gap="0">
+                    {itens.map((item, idx) => {
+                      const itemSub =
+                        item.qtd === null
+                          ? item.preco_uni
+                          : (item.qtd ?? 1) * item.preco_uni;
+                      return (
+                        <SortableItem
+                          key={item.id}
+                          id={item.id!}
+                          item={item}
+                          sub={itemSub}
+                          idx={idx}
+                          onUpdateQtd={(i, v) =>
+                            setItens((p) =>
+                              p.map((it, x) =>
+                                x === i
+                                  ? {
+                                      ...it,
+                                      qtd: v === "" ? null : parseInt(v),
+                                    }
+                                  : it,
+                              ),
+                            )
+                          }
+                          onUpdatePreco={(i, v) =>
+                            setItens((p) =>
+                              p.map((it, x) =>
+                                x === i
+                                  ? {
+                                      ...it,
+                                      preco_uni: v === "" ? 0 : parseFloat(v),
+                                    }
+                                  : it,
+                              ),
+                            )
+                          }
+                          onRemove={(i) =>
+                            setItens((p) => p.filter((_, x) => x !== i))
+                          }
+                        />
+                      );
+                    })}
+                  </Stack>
                 </SortableContext>
               </DndContext>
             )}
-          </div>
+          </Box>
 
-          {/* Ticket Footer: Totals & Actions */}
-          <div className="p-8 border-t border-white/[0.08] bg-white/[0.01] relative">
-            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+          <Separator borderColor="var(--color-edge)" />
 
-            <div className="space-y-6 mb-8">
-              {/* Summary Lines */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center text-[10px] font-bold text-text-muted uppercase tracking-[0.2em]">
-                  <span>Resumo da Venda</span>
-                  <span className="text-white">
-                    R$ {subtotal.toFixed(2).replace(".", ",")}
-                  </span>
-                </div>
+          {/* Footer — totals + CTA */}
+          <Box px="5" py="4" flexShrink={0}>
+            <VStack gap="3" align="stretch">
+              {/* Subtotal */}
+              <Flex
+                justify="space-between"
+                fontSize="13px"
+                color="whiteAlpha.500"
+              >
+                <Text>Subtotal</Text>
+                <Text
+                  fontWeight="600"
+                  fontVariantNumeric="tabular-nums"
+                  color="whiteAlpha.700"
+                >
+                  R$ {subtotal.toFixed(2).replace(".", ",")}
+                </Text>
+              </Flex>
 
-                {descontos.length > 0 && (
-                  <div className="space-y-2">
-                    {descontos.map((d, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between text-[11px] font-bold text-red uppercase tracking-tight"
+              {/* Descontos */}
+              {hasDescontos &&
+                descontos.map((d, i) => (
+                  <Flex
+                    key={i}
+                    justify="space-between"
+                    align="center"
+                    fontSize="12px"
+                    color="red.300"
+                  >
+                    <HStack gap="1.5" minW="0">
+                      <Tag size={10} />
+                      <Text truncate>{d.nome || "Desconto"}</Text>
+                    </HStack>
+                    <HStack gap="1.5" flexShrink={0}>
+                      <Text fontVariantNumeric="tabular-nums">
+                        −
+                        {d.tipo === "valor"
+                          ? ` R$ ${d.valor.toFixed(2).replace(".", ",")}`
+                          : ` ${d.valor}%`}
+                      </Text>
+                      <IconButton
+                        variant="plain"
+                        size="2xs"
+                        color="red.300"
+                        aria-label="Remover"
+                        onClick={() =>
+                          setDescontos((p) => p.filter((_, x) => x !== i))
+                        }
                       >
-                        <div className="flex items-center gap-2">
-                          <Tag size={10} />
-                          <span>{d.nome || "Desconto"}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span>
-                            -
-                            {d.tipo === "valor"
-                              ? `R$ ${d.valor}`
-                              : `${d.valor}%`}
-                          </span>
-                          <button
-                            onClick={() =>
-                              setDescontos((p) => p.filter((_, x) => x !== i))
-                            }
-                            className="hover:opacity-60"
-                          >
-                            <X size={12} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                        <X size={11} />
+                      </IconButton>
+                    </HStack>
+                  </Flex>
+                ))}
 
-              {/* Final Totalizer */}
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold text-text-dim uppercase tracking-[0.4em]">
-                  Total Bruto
-                </span>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-primary">R$</span>
-                  <span className="text-3xl font-bold text-white tracking-tighter tabular-nums leading-none">
+              {/* Total */}
+              <Flex justify="space-between" align="baseline" pt="1">
+                <Text
+                  fontSize="12px"
+                  fontWeight="600"
+                  color="whiteAlpha.500"
+                  textTransform="uppercase"
+                  letterSpacing="0.06em"
+                >
+                  Total
+                </Text>
+                <HStack align="baseline" gap="1">
+                  <Text fontSize="13px" fontWeight="600" color="blue.300">
+                    R$
+                  </Text>
+                  <Text
+                    fontSize="28px"
+                    fontWeight="800"
+                    color="white"
+                    lineHeight="1"
+                    fontVariantNumeric="tabular-nums"
+                    letterSpacing="-0.03em"
+                  >
                     {total.toFixed(2).replace(".", ",")}
-                  </span>
-                </div>
-              </div>
-            </div>
+                  </Text>
+                </HStack>
+              </Flex>
 
-            {finished ? (
-              <button
-                className="w-full bg-white text-bg h-16 flex items-center justify-center gap-4 text-xs font-bold uppercase tracking-[0.2em] shadow-xl hover:bg-primary hover:text-white transition-all group rounded-2xl"
-                onClick={handleNovoPedido}
-              >
-                <Plus
-                  size={20}
-                  className="transition-transform group-hover:rotate-90"
-                />
-                <span>Nova Venda</span>
-              </button>
-            ) : (
-              <button
-                className="w-full btn-primary h-[72px] flex items-center justify-center gap-4 text-[13px] font-bold shadow-2xl disabled:opacity-30 group active:scale-[0.98] transition-all rounded-2xl"
-                disabled={
-                  printing ||
-                  printerStatus !== "connected" ||
-                  itens.length === 0
-                }
-                onClick={handleImprimir}
-              >
-                {printing ? (
-                  <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <div className="flex items-center gap-4">
-                    <PrinterIcon
-                      size={24}
-                      className="transition-transform group-hover:-translate-y-1"
-                    />
-                    <span className="uppercase tracking-widest leading-none">
-                      Finalizar Pedido
-                    </span>
-                  </div>
-                )}
-              </button>
-            )}
+              {/* Action button */}
+              {finished ? (
+                <Button
+                  w="full"
+                  h="12"
+                  rounded="xl"
+                  bg="whiteAlpha.100"
+                  color="white"
+                  fontWeight="700"
+                  _hover={{ bg: "whiteAlpha.200" }}
+                  onClick={handleNovoPedido}
+                >
+                  <RotateCcw size={16} />
+                  <Text ml="2">Nova Venda</Text>
+                </Button>
+              ) : (
+                <Button
+                  w="full"
+                  h="12"
+                  rounded="xl"
+                  colorPalette="blue"
+                  fontWeight="700"
+                  disabled={
+                    printing ||
+                    printerStatus !== "connected" ||
+                    itens.length === 0
+                  }
+                  onClick={handleImprimir}
+                  loading={printing}
+                >
+                  <PrinterIcon size={18} />
+                  <Text ml="2">Imprimir</Text>
+                </Button>
+              )}
 
-            {printerStatus !== "connected" && (
-              <div className="flex items-center justify-center gap-3 pt-6 opacity-60">
-                <div className="w-1.5 h-1.5 rounded-full bg-red animate-pulse" />
-                <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-red">
-                  Impressora Oflline
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
+              {printerStatus !== "connected" && (
+                <HStack justify="center" gap="2" py="1">
+                  <Circle size="1.5" bg="red.400" />
+                  <Text fontSize="11px" color="whiteAlpha.400">
+                    Impressora desconectada
+                  </Text>
+                </HStack>
+              )}
+            </VStack>
+          </Box>
+        </Flex>
 
-        {/* ── RIGHT COLUMN: THE COMMAND DECK (CATALOG & ENTRY) ───────────────── */}
-        <div
-          className={`space-y-8 flex flex-col lg:h-full lg:overflow-hidden ${
-            mobileView !== "cardapio" ? "hidden lg:flex" : "flex"
-          }`}
+        {/* ════════════════════════════════════════════════════════════════
+           RIGHT — Adicionar itens / catálogo
+           ════════════════════════════════════════════════════════════════ */}
+        <Flex
+          direction="column"
+          display={{
+            base: mobileView === "cardapio" ? "flex" : "none",
+            lg: "flex",
+          }}
+          gap="5"
+          overflow="hidden"
+          minH="0"
         >
-          {/* Manual Entry Console - Unified Top Bar */}
-          <div className="glass-panel p-2 flex flex-col lg:flex-row items-stretch lg:items-center gap-2 border-white/[0.05] shadow-xl">
-            {/* Row 1: Item Name */}
-            <div className="flex-1 flex items-center gap-3 pl-4">
-              <Plus size={18} className="text-primary/60" />
-              <input
-                className="w-full bg-transparent border-none py-4 text-sm font-semibold text-white outline-none placeholder:text-text-dim/40"
-                placeholder="Produto ou serviço..."
+          {/* ── Add manual item ───────────────────────────────────────── */}
+          <Box
+            bg="var(--color-surface)"
+            rounded={{ base: "xl", lg: "2xl" }}
+            borderWidth="1px"
+            borderColor="var(--color-edge)"
+            px={{ base: 6, md: 5 }}
+            py={{ base: 6, md: 5 }}
+            flexShrink={0}
+          >
+            <Text
+              fontSize="12px"
+              fontWeight="600"
+              color="whiteAlpha.500"
+              textTransform="uppercase"
+              letterSpacing="0.06em"
+              mb="3"
+            >
+              Item avulso
+            </Text>
+            <Flex gap="3" direction={{ base: "column", md: "row" }}>
+              <ChakraInput
+                {...inputProps}
+                placeholder="Nome do item"
                 value={avNome}
                 onChange={(e) => setAvNome(e.target.value)}
                 onKeyDown={handleKeyDown}
                 maxLength={24}
               />
-            </div>
-
-            <div className="hidden lg:block w-[1px] h-10 bg-white/10" />
-
-            {/* Row 2: Qtd, Price & Add Button (Grouped on mobile) */}
-            <div className="flex items-stretch gap-2 p-1 lg:p-0">
-              {/* Qtd Input Group */}
-              <div className="flex-1 lg:w-20 flex items-center bg-black/20 lg:bg-white/5 lg:border-white/10 overflow-hidden rounded-xl border border-white/5 focus-within:border-primary/50 focus-within:bg-black/40 transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.1)]">
-                <span className="text-[9px] font-bold text-text-dim/60 uppercase tracking-widest px-3 h-full flex items-center border-r border-white/5 bg-white/[0.02]">
-                  Qtd
-                </span>
-                <input
-                  className="w-full bg-transparent border-none py-4 text-sm font-bold text-white text-center outline-none placeholder:text-text-dim/40"
+              <Flex
+                gap="2"
+                flexShrink={0}
+                direction={{ base: "row", md: "row" }}
+                flexWrap={{ base: "wrap", md: "nowrap" }}
+                align={{ base: "stretch", md: "center" }}
+                w={{ base: "full", md: "auto" }}
+              >
+                <ChakraInput
+                  {...inputProps}
+                  flex={{ base: "1 1 72px", md: "none" }}
+                  w={{ base: "auto", md: "16" }}
+                  minW={{ base: "72px", md: "unset" }}
+                  textAlign="center"
                   type="number"
-                  placeholder="1"
+                  placeholder="Qtd"
                   value={avQtd}
                   onChange={(e) => setAvQtd(e.target.value)}
                   onKeyDown={handleKeyDown}
                   onFocus={selectOnFocus}
                 />
-              </div>
-
-              {/* Price Input Group */}
-              <div className="flex-[1.5] lg:w-32 flex items-center bg-black/20 lg:bg-white/5 lg:border-white/10 overflow-hidden rounded-xl border border-white/5 focus-within:border-primary/50 focus-within:bg-black/40 transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.1)]">
-                <span className="text-[9px] font-bold text-text-dim/60 uppercase tracking-widest px-3 h-full flex items-center border-r border-white/5 bg-white/[0.02]">
-                  R$
-                </span>
-                <input
-                  className="w-full bg-transparent border-none py-4 px-2 text-sm font-bold text-white text-right outline-none placeholder:text-text-dim/40"
+                <ChakraInput
+                  {...inputProps}
+                  flex={{ base: "1 1 100px", md: "none" }}
+                  w={{ base: "auto", md: "24" }}
+                  minW={{ base: "100px", md: "unset" }}
+                  textAlign="right"
                   type="number"
-                  placeholder="0,00"
+                  placeholder="R$ 0,00"
                   value={avPreco}
                   onChange={(e) => setAvPreco(e.target.value)}
                   onKeyDown={handleKeyDown}
                   onFocus={selectOnFocus}
                   step="0.01"
                 />
-              </div>
+                <IconButton
+                  colorPalette="blue"
+                  h="10"
+                  w="10"
+                  rounded="lg"
+                  flexShrink={0}
+                  onClick={addManual}
+                  aria-label="Adicionar"
+                >
+                  <Plus size={18} />
+                </IconButton>
+              </Flex>
+            </Flex>
+          </Box>
 
-              <button
-                className="w-14 lg:w-14 bg-primary text-white flex items-center justify-center rounded-xl hover:bg-primary-hover shadow-lg active:scale-95 transition-all shrink-0"
-                onClick={addManual}
+          {/* ── Discount ──────────────────────────────────────────────── */}
+          <Box
+            bg="var(--color-surface)"
+            rounded={{ base: "xl", lg: "2xl" }}
+            borderWidth="1px"
+            borderColor="var(--color-edge)"
+            px={{ base: 6, md: 5 }}
+            py={{ base: 6, md: 5 }}
+            flexShrink={0}
+          >
+            <Text
+              fontSize="12px"
+              fontWeight="600"
+              color="whiteAlpha.500"
+              textTransform="uppercase"
+              letterSpacing="0.06em"
+              mb="3"
+            >
+              Desconto
+            </Text>
+            <Flex gap="3" direction={{ base: "column", md: "row" }}>
+              <ChakraInput
+                {...inputProps}
+                placeholder="Referência (ex: PIX)"
+                value={dNome}
+                onChange={(e) => setDNome(e.target.value)}
+              />
+              <Flex
+                gap="2"
+                flexShrink={0}
+                flexWrap={{ base: "wrap", md: "nowrap" }}
+                align={{ base: "center", md: "center" }}
+                w={{ base: "full", md: "auto" }}
               >
-                <Plus size={24} />
-              </button>
-            </div>
-          </div>
-
-          {/* 2. Catalog Grid & Quick Discounts */}
-          <div className="flex-1 flex flex-col gap-6 min-h-0 overflow-hidden">
-            {/* Quick Actions Panel */}
-            <div className="p-4 lg:p-6 glass-panel border-white/[0.04] bg-white/[0.01]">
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-2">
-                  <Tag size={16} className="text-primary" />
-                  <span className="text-xs font-bold text-white uppercase tracking-wider">
-                    Descontos
-                  </span>
-                </div>
-
-                <div className="flex flex-col lg:flex-row gap-3">
-                  <input
-                    className="w-full lg:flex-1 bg-black/40 border border-white/5 rounded-xl px-4 py-3.5 text-xs font-bold text-white outline-none focus:border-white/20"
-                    placeholder="Referência (Ex: Parceria)"
-                    value={dNome}
-                    onChange={(e) => setDNome(e.target.value)}
-                  />
-
-                  <div className="flex items-center gap-2 w-full lg:w-auto">
-                    <div className="flex items-center gap-1 p-1 bg-black/40 border border-white/5 rounded-xl flex-1 lg:flex-none">
-                      <button
-                        onClick={() => setDTipo("valor")}
-                        className={`flex-1 lg:px-3 py-2.5 rounded-lg text-[10px] font-black transition-all duration-300 ${
-                          dTipo === "valor"
-                            ? "bg-primary text-white shadow-lg shadow-primary/20"
-                            : "text-text-dim hover:text-white"
-                        }`}
-                      >
-                        R$
-                      </button>
-                      <button
-                        onClick={() => setDTipo("percentual")}
-                        className={`flex-1 lg:px-3 py-2.5 rounded-lg text-[10px] font-black transition-all duration-300 ${
-                          dTipo === "percentual"
-                            ? "bg-primary text-white shadow-lg shadow-primary/20"
-                            : "text-text-dim hover:text-white"
-                        }`}
-                      >
-                        %
-                      </button>
-                    </div>
-
-                    <div className="relative group flex-1 lg:w-32">
-                      <input
-                        className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-[13px] text-xs font-bold text-white outline-none text-right focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-all font-mono"
-                        placeholder="0,00"
-                        type="number"
-                        value={dValor}
-                        onChange={(e) => setDValor(e.target.value)}
-                      />
-                    </div>
-
-                    <button
-                      className="h-[46px] px-4 bg-white/5 border border-white/5 rounded-xl text-[10px] font-bold text-white hover:bg-primary hover:border-primary transition-all uppercase tracking-widest disabled:opacity-20 flex items-center justify-center shrink-0"
-                      onClick={handleAddDesconto}
-                      disabled={!dValor}
-                    >
-                      <Plus size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Catalog Selection Grid */}
-            <div className="flex-1 lg:overflow-y-auto custom-scrollbar pr-3 -mr-3 relative">
-              <div className="flex items-center gap-4 mb-6">
-                <span className="px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-[10px] font-bold text-primary uppercase tracking-[0.25em]">
-                  Sua Vitrine
-                </span>
-                <div className="flex-1 h-[1px] bg-white/[0.08]" />
-                {isPremium && (
-                  <div className="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-lg">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />
-                    <span className="text-[9px] font-bold text-text-dim uppercase tracking-widest">
-                      Estoque On-line
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {!isPremium ? (
-                <div className="flex flex-col items-center justify-center py-20 px-10 bg-primary/5 border border-dashed border-primary/20 rounded-3xl text-center gap-4 relative overflow-hidden group">
-                  {/* Decorative background glow */}
-                  <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-2 shadow-lg shadow-primary/5">
-                    <Lock size={28} />
-                  </div>
-                  <div>
-                    <h3 className="text-white font-bold text-lg">
-                      Catálogo de Produtos
-                    </h3>
-                    <p className="text-sm text-text-dim mt-2 max-w-[280px]">
-                      Assine o plano <b>Premium</b> para cadastrar seus itens e
-                      vender com um clique.
-                    </p>
-                  </div>
-                  <a
-                    href="/paywall"
-                    className="btn-primary px-8 h-12 flex items-center justify-center text-[11px] font-bold uppercase tracking-widest mt-2 active:scale-95 transition-all shadow-xl shadow-primary/20"
+                <HStack
+                  bg="whiteAlpha.50"
+                  borderWidth="1px"
+                  borderColor="whiteAlpha.100"
+                  rounded="lg"
+                  p="0.5"
+                  gap="0.5"
+                  h="10"
+                  flexShrink={0}
+                >
+                  <Button
+                    variant={dTipo === "valor" ? "solid" : "ghost"}
+                    colorPalette={dTipo === "valor" ? "blue" : undefined}
+                    size="sm"
+                    h="9"
+                    px="3"
+                    rounded="md"
+                    fontSize="12px"
+                    fontWeight="700"
+                    onClick={() => setDTipo("valor")}
                   >
-                    Ver Planos
-                  </a>
-                </div>
-              ) : produtos.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-3xl opacity-20 text-center">
-                  <Tag size={32} className="mb-4" />
-                  <p className="text-xs font-bold uppercase tracking-widest">
-                    Nenhum item cadastrado
-                  </p>
-                  <p className="text-[10px] text-text-dim mt-2 tracking-tight">
-                    Vá em "Catálogo" para adicionar produtos.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-8">
-                  {produtos.map((p) => (
-                    <button
-                      key={p.id}
-                      className="flex flex-col p-4 lg:p-6 bg-white/[0.03] border border-white/[0.05] rounded-[24px] cursor-pointer hover:border-primary/50 hover:bg-primary/[0.03] hover:shadow-[0_15px_40px_rgba(59,130,246,0.15)] transition-all duration-300 active:scale-[0.96] text-left relative group overflow-hidden"
-                      onClick={() => addFromCatalog(p)}
-                    >
-                      {/* Interaction Glow */}
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 blur-[40px] rounded-full translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    R$
+                  </Button>
+                  <Button
+                    variant={dTipo === "percentual" ? "solid" : "ghost"}
+                    colorPalette={dTipo === "percentual" ? "blue" : undefined}
+                    size="sm"
+                    h="9"
+                    px="3"
+                    rounded="md"
+                    fontSize="12px"
+                    fontWeight="700"
+                    onClick={() => setDTipo("percentual")}
+                  >
+                    %
+                  </Button>
+                </HStack>
+                <ChakraInput
+                  {...inputStyle}
+                  flex={{ base: "1 1 100px", md: "none" }}
+                  w={{ base: "auto", md: "24" }}
+                  minW={{ base: "100px", md: "unset" }}
+                  px="3"
+                  h="10"
+                  textAlign="right"
+                  type="number"
+                  placeholder="0,00"
+                  value={dValor}
+                  onChange={(e) => setDValor(e.target.value)}
+                />
+                <IconButton
+                  colorPalette="blue"
+                  h="10"
+                  w="10"
+                  rounded="lg"
+                  flexShrink={0}
+                  onClick={handleAddDesconto}
+                  disabled={!dValor}
+                  aria-label="Adicionar desconto"
+                >
+                  <Plus size={18} />
+                </IconButton>
+              </Flex>
+            </Flex>
+          </Box>
 
-                      <div className="text-xs lg:text-sm font-bold text-white mb-2 leading-tight group-hover:text-primary transition-colors pr-2">
-                        {p.nome}
-                      </div>
-                      <div className="text-[10px] lg:text-xs font-bold text-primary/80 flex items-baseline gap-0.5 mt-auto">
-                        <span className="text-[8px] lg:text-[10px] opacity-70">
-                          R$
-                        </span>
-                        <span className="text-base lg:text-lg tabular-nums">
-                          {p.preco.toFixed(2).replace(".", ",")}
-                        </span>
-                      </div>
-
-                      <div className="absolute bottom-3 right-3 lg:bottom-4 lg:right-4 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all">
-                        <div className="p-1 lg:p-1.5 bg-primary rounded-lg shadow-lg">
-                          <Plus size={12} className="text-white" />
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
+          {/* ── Catalog ───────────────────────────────────────────────── */}
+          <Box
+            flex="1"
+            minH="0"
+            bg="var(--color-surface)"
+            rounded={{ base: "xl", lg: "2xl" }}
+            borderWidth="1px"
+            borderColor="var(--color-edge)"
+            display="flex"
+            flexDirection="column"
+            overflow="hidden"
+          >
+            <Flex
+              align="center"
+              justify="space-between"
+              px={{ base: 6, md: 5 }}
+              py="4"
+              flexShrink={0}
+            >
+              <Text
+                fontSize="12px"
+                fontWeight="600"
+                color="whiteAlpha.500"
+                textTransform="uppercase"
+                letterSpacing="0.06em"
+              >
+                Catálogo
+              </Text>
+              {isPremium && produtos.length > 0 && (
+                <Text fontSize="11px" color="whiteAlpha.400">
+                  {produtos.length}{" "}
+                  {produtos.length === 1 ? "produto" : "produtos"}
+                </Text>
               )}
-            </div>
-          </div>
-        </div>
+            </Flex>
 
-        <LivePreview
-          text={preview}
-          colunas={loja.largura_colunas}
-          isOpen={isPreviewOpen}
-          onClose={() => setIsPreviewOpen(false)}
-        />
-      </div>
-    </div>
+            <Box
+              flex="1"
+              overflowY="auto"
+              px={{ base: 6, md: 5 }}
+              pb={{ base: 10, md: 5 }}
+              minH="0"
+            >
+              {!isPremium ? (
+                <Center
+                  flexDir="column"
+                  py="12"
+                  textAlign="center"
+                  gap="3"
+                  rounded="xl"
+                  bg="whiteAlpha.50"
+                  borderWidth="1px"
+                  borderStyle="dashed"
+                  borderColor="whiteAlpha.100"
+                >
+                  <Circle size="12" bg="blue.500/10" color="blue.300">
+                    <Lock size={20} />
+                  </Circle>
+                  <Box>
+                    <Text fontWeight="600" fontSize="14px" mb="1">
+                      Catálogo Premium
+                    </Text>
+                    <Text fontSize="12px" color="whiteAlpha.400" maxW="240px">
+                      Salve seus produtos e venda com um toque.
+                    </Text>
+                  </Box>
+                  <Button
+                    asChild
+                    colorPalette="blue"
+                    size="sm"
+                    rounded="lg"
+                    fontWeight="600"
+                    mt="1"
+                  >
+                    <a href="/paywall">Ver Planos</a>
+                  </Button>
+                </Center>
+              ) : produtos.length === 0 ? (
+                <Center flexDir="column" py="12" opacity={0.4}>
+                  <Text fontSize="13px" color="whiteAlpha.500">
+                    Nenhum produto cadastrado
+                  </Text>
+                  <Text fontSize="11px" color="whiteAlpha.400" mt="1">
+                    Vá em Produtos para adicionar.
+                  </Text>
+                </Center>
+              ) : (
+                <Grid
+                  templateColumns="repeat(auto-fill, minmax(140px, 1fr))"
+                  gap="3"
+                >
+                  {produtos.map((p) => (
+                    <Flex
+                      key={p.id}
+                      direction="column"
+                      justify="space-between"
+                      role="button"
+                      tabIndex={0}
+                      cursor="pointer"
+                      p="4"
+                      minH="88px"
+                      bg="whiteAlpha.50"
+                      borderWidth="1px"
+                      borderColor="whiteAlpha.100"
+                      rounded="xl"
+                      transition="all 0.15s"
+                      _hover={{
+                        bg: "blue.500/10",
+                        borderColor: "blue.400/30",
+                        transform: "translateY(-2px)",
+                      }}
+                      _active={{ transform: "scale(0.97)" }}
+                      onClick={() => addFromCatalog(p)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          addFromCatalog(p);
+                        }
+                      }}
+                    >
+                      <Text
+                        fontSize="13px"
+                        fontWeight="600"
+                        lineClamp={2}
+                        mb="2"
+                      >
+                        {p.nome}
+                      </Text>
+                      <Text
+                        fontSize="15px"
+                        fontWeight="800"
+                        color="blue.300"
+                        fontVariantNumeric="tabular-nums"
+                      >
+                        {p.preco.toFixed(2).replace(".", ",")}
+                      </Text>
+                    </Flex>
+                  ))}
+                </Grid>
+              )}
+            </Box>
+          </Box>
+        </Flex>
+      </Grid>
+
+      {/* ── Preview Modal ─────────────────────────────────────────────── */}
+      <DialogRoot
+        open={isPreviewOpen}
+        onOpenChange={(e) => setIsPreviewOpen(e.open)}
+        size="md"
+        placement="center"
+        motionPreset="slide-in-bottom"
+      >
+        <DialogContent
+          bg="var(--color-surface)"
+          borderWidth="1px"
+          borderColor="var(--color-edge)"
+          rounded="2xl"
+          p="0"
+          overflow="hidden"
+          w={{ base: "full", md: "auto" }}
+          maxW={{ base: "min(calc(100vw - 2rem), 32rem)", md: "lg" }}
+          mx="auto"
+          my={{ base: 4, md: "auto" }}
+        >
+          <DialogHeader
+            px={{ base: 5, md: 5 }}
+            py="4"
+            pr={{ base: 12, md: 10 }}
+          >
+            <Flex justify="space-between" align="center" w="full">
+              <DialogTitle fontSize="14px" fontWeight="700">
+                Pré-visualização
+              </DialogTitle>
+              <DialogCloseTrigger>
+                <X size={16} />
+              </DialogCloseTrigger>
+            </Flex>
+          </DialogHeader>
+          <DialogBody px={{ base: 4, md: 5 }} pb="5">
+            <Box
+              bg="#fafafa"
+              rounded="lg"
+              maxH="55vh"
+              overflowY="auto"
+              mx="auto"
+              w="fit-content"
+              maxW="full"
+            >
+              <LivePreview content={preview} colunas={loja.largura_colunas} />
+            </Box>
+          </DialogBody>
+          <DialogFooter
+            px={{ base: 5, md: 5 }}
+            py="4"
+            borderTopWidth="1px"
+            borderColor="var(--color-edge)"
+          >
+            <Button
+              w="full"
+              colorPalette="blue"
+              h="11"
+              rounded="lg"
+              fontWeight="700"
+              onClick={() => {
+                handleImprimir();
+                setIsPreviewOpen(false);
+              }}
+              disabled={printing || printerStatus !== "connected"}
+              loading={printing}
+            >
+              <PrinterIcon size={16} />
+              <Text ml="2">Imprimir agora</Text>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </DialogRoot>
+    </Flex>
   );
 }

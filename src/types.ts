@@ -12,6 +12,8 @@ export interface ItemPedido {
   preco_uni: number;
   data?: string; // Formato YYYY-MM-DD
   id?: string; // ID único local para ordenação (DND) e Chaves React
+  /** Presente quando a linha veio do catálogo — usado para somar qtd ao clicar de novo */
+  produtoCatalogoId?: string;
 }
 
 export interface Desconto {

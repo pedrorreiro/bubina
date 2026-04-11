@@ -1,15 +1,25 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useApp } from '@/context/AppContext';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Store, Phone, ArrowRight, Printer } from 'lucide-react';
-import { maskPhone } from '@/lib/utils';
+import { useState } from "react";
+import { useApp } from "@/context/AppContext";
+import { motion } from "framer-motion";
+import { Store, Phone, ArrowRight, Printer } from "lucide-react";
+import { maskPhone } from "@/lib/utils";
+import {
+  Box,
+  Center,
+  Heading,
+  Text,
+  VStack,
+  Input as ChakraInput,
+} from "@chakra-ui/react";
+import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
 
 export function StoreOnboarding() {
   const { setLoja, loja } = useApp();
-  const [nome, setNome] = useState('');
-  const [telefone, setTelefone] = useState('');
+  const [nome, setNome] = useState("");
+  const [telefone, setTelefone] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,105 +41,215 @@ export function StoreOnboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-[#020305] flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Background Orbs - More Cinematic */}
-      <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[140px] pointer-events-none animate-pulse duration-[8s]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[140px] pointer-events-none" />
-      
-      {/* Mesh Gradient Effect */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.02),transparent_100%)] pointer-events-none" />
+    <Center
+      minH="screen"
+      bg="#020305"
+      p="6"
+      position="relative"
+      overflow="hidden"
+    >
+      {/* Background Orbs */}
+      <Box
+        position="absolute"
+        top="-20%"
+        left="-10%"
+        w="60%"
+        h="60%"
+        bg="blue.500/10"
+        borderRadius="full"
+        filter="blur(140px)"
+        pointerEvents="none"
+        animation="pulse 8s infinite"
+      />
+      <Box
+        position="absolute"
+        bottom="-10%"
+        right="-10%"
+        w="50%"
+        h="50%"
+        bg="blue.500/5"
+        borderRadius="full"
+        filter="blur(140px)"
+        pointerEvents="none"
+      />
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="w-full max-w-lg relative z-10"
+        style={{
+          width: "100%",
+          maxWidth: "512px",
+          position: "relative",
+          zIndex: 10,
+        }}
       >
-        <div className="flex flex-col items-center mb-12">
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="flex flex-col items-center"
+        <VStack mb="12" gap="6">
+          <Center
+            w="16"
+            h="16"
+            borderRadius="3xl"
+            bg="blue.500/10"
+            border="1px solid"
+            borderColor="blue.500/20"
+            color="blue.400"
+            shadow="2xl"
           >
-            <div className="w-16 h-16 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-6 shadow-2xl shadow-primary/20">
-              <Printer size={32} />
-            </div>
-            <h1 className="text-4xl font-bold text-white tracking-tighter mb-3">
-              Bubina
-            </h1>
-            <p className="text-text-dim font-bold text-center text-[10px] uppercase tracking-[0.4em]">
-              SaaS Operational Framework
-            </p>
-          </motion.div>
-        </div>
-
-        <div className="glass-panel p-10 sm:p-14 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.7)] border-white/[0.05]">
-          <div className="mb-10 text-center">
-            <h2 className="text-xl font-bold text-white mb-2">Configuração Inicial</h2>
-            <p className="text-sm text-text-dim font-medium">Preencha os dados do seu estabelecimento para começar.</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-[11px] font-semibold text-text-muted px-1 uppercase tracking-wider">
-                Nome do Negócio
-              </label>
-              <div className="relative group">
-                <Store size={14} className="absolute left-5 top-1/2 -translate-y-1/2 text-text-dim group-focus-within:text-primary transition-colors" />
-                <input 
-                  required
-                  className="w-full bg-black/40 border border-white/5 rounded-2xl pl-12 pr-5 py-4 text-sm font-semibold text-white focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-text-dim/20" 
-                  value={nome}
-                  onChange={e => setNome(e.target.value)}
-                  placeholder="Ex: Pizzaria Gourmet"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-[11px] font-semibold text-text-muted px-1 uppercase tracking-wider">
-                Contato Comercial
-              </label>
-              <div className="relative group">
-                <Phone size={14} className="absolute left-5 top-1/2 -translate-y-1/2 text-text-dim group-focus-within:text-primary transition-colors" />
-                <input 
-                  required
-                  className="w-full bg-black/40 border border-white/5 rounded-2xl pl-12 pr-5 py-4 text-sm font-bold text-white focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-text-dim/20 tabular-nums" 
-                  value={telefone}
-                  onChange={e => setTelefone(maskPhone(e.target.value))}
-                  placeholder="(00) 12345-6789"
-                />
-              </div>
-            </div>
-
-            <button 
-              disabled={isSubmitting || !nome.trim() || !telefone.trim()}
-              className="btn-primary w-full h-[72px] mt-4 flex items-center justify-center gap-4 text-sm font-bold shadow-2xl disabled:opacity-30 group active:scale-[0.98] transition-all"
+            <Printer size={32} />
+          </Center>
+          <VStack gap="1">
+            <Heading
+              size="4xl"
+              fontWeight="bold"
+              letterSpacing="tight"
+              color="white"
             >
-              {isSubmitting ? (
-                <div className="w-6 h-6 border-3 border-white/20 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <span className="uppercase tracking-widest">Ativar Workspace</span>
-                  <ArrowRight size={20} className="group-hover:translate-x-1.5 transition-transform" />
-                </>
-              )}
-            </button>
-          </form>
-        </div>
+              Bubina
+            </Heading>
+            <Text
+              fontSize="10px"
+              fontWeight="bold"
+              color="whiteAlpha.400"
+              textTransform="uppercase"
+            >
+              SaaS Operational Framework
+            </Text>
+          </VStack>
+        </VStack>
 
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
-          className="mt-12 text-center"
+        <Box
+          className="app-panel"
+          bg="transparent"
+          borderWidth="0"
+          shadow="none"
+          p={{ base: "10", sm: "14" }}
         >
-          <p className="text-[10px] font-bold text-text-dim uppercase tracking-[0.2em] leading-relaxed max-w-xs mx-auto">
-            Seus dados são criptografados e <span className="text-white">sincronizados em tempo real</span>.
-          </p>
-        </motion.div>
+          <VStack mb="10" textAlign="center" gap="2">
+            <Heading size="lg" fontWeight="bold" color="white">
+              Configuração Inicial
+            </Heading>
+            <Text fontSize="sm" color="whiteAlpha.500" fontWeight="medium">
+              Preencha os dados do seu estabelecimento para começar.
+            </Text>
+          </VStack>
+
+          <form onSubmit={handleSubmit}>
+            <VStack gap="8" align="stretch">
+              <Field label="Nome do Negócio">
+                <Box position="relative" w="full">
+                  <Box
+                    position="absolute"
+                    left="5"
+                    top="50%"
+                    transform="translateY(-50%)"
+                    zIndex="1"
+                    color="whiteAlpha.400"
+                  >
+                    <Store size={14} />
+                  </Box>
+                  <ChakraInput
+                    required
+                    bg="blackAlpha.400"
+                    borderWidth="1px"
+                    borderColor="whiteAlpha.50"
+                    borderRadius="2xl"
+                    pl="12"
+                    pr="5"
+                    py="6"
+                    fontSize="sm"
+                    fontWeight="semibold"
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    placeholder="Ex: Pizzaria Gourmet"
+                    _focus={{
+                      borderColor: "blue.400/50",
+                      ring: "1px",
+                      ringColor: "blue.400/20",
+                    }}
+                  />
+                </Box>
+              </Field>
+
+              <Field label="Contato Comercial">
+                <Box position="relative" w="full">
+                  <Box
+                    position="absolute"
+                    left="5"
+                    top="50%"
+                    transform="translateY(-50%)"
+                    zIndex="1"
+                    color="whiteAlpha.400"
+                  >
+                    <Phone size={14} />
+                  </Box>
+                  <ChakraInput
+                    required
+                    bg="blackAlpha.400"
+                    borderWidth="1px"
+                    borderColor="whiteAlpha.50"
+                    borderRadius="2xl"
+                    pl="12"
+                    pr="5"
+                    py="6"
+                    fontSize="sm"
+                    fontWeight="bold"
+                    value={telefone}
+                    onChange={(e) => setTelefone(maskPhone(e.target.value))}
+                    placeholder="(00) 12345-6789"
+                    _focus={{
+                      borderColor: "blue.400/50",
+                      ring: "1px",
+                      ringColor: "blue.400/20",
+                    }}
+                  />
+                </Box>
+              </Field>
+
+              <Button
+                type="submit"
+                disabled={!nome.trim() || !telefone.trim()}
+                colorPalette="blue"
+                h="18"
+                mt="4"
+                borderRadius="2xl"
+                fontSize="sm"
+                fontWeight="bold"
+                loading={isSubmitting}
+                shadow="2xl"
+              >
+                <Text
+                  as="span"
+                  textTransform="uppercase"
+                  display="inline-flex"
+                  alignItems="center"
+                  gap="4"
+                >
+                  Ativar Workspace
+                  <ArrowRight size={20} />
+                </Text>
+              </Button>
+            </VStack>
+          </form>
+        </Box>
+
+        <Box mt="12" textAlign="center" opacity={0.6}>
+          <Text
+            fontSize="10px"
+            fontWeight="bold"
+            color="whiteAlpha.400"
+            textTransform="uppercase"
+            maxW="xs"
+            mx="auto"
+            lineHeight="relaxed"
+          >
+            Seus dados são criptografados e{" "}
+            <Text as="span" color="white">
+              sincronizados em tempo real
+            </Text>
+            .
+          </Text>
+        </Box>
       </motion.div>
-    </div>
+    </Center>
   );
 }

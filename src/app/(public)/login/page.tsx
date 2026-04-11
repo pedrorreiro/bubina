@@ -23,11 +23,11 @@ export default function LoginPage() {
 
     // Listen for auth events (e.g. successful login)
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_IN') {
-          router.push('/');
+      (event) => {
+        if (event === "SIGNED_IN") {
+          router.push("/");
         }
-      }
+      },
     );
 
     return () => {

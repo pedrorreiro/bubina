@@ -4,24 +4,130 @@ import { useState, useEffect } from "react";
 import { useApp } from "@/context/AppContext";
 import { toast } from "sonner";
 import { SubscriptionCard } from "@/components/subscription/SubscriptionCard";
-import {
-  Store,
-  Image as ImageIcon,
-  X,
-  Lock,
-  Zap,
-  PlusCircle,
-} from "lucide-react";
+import { Store, X, Lock, PlusCircle, ImageIcon, Cloud } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { maskPhone } from "@/lib/utils";
 import { StorageService } from "@/services/storage";
 import { useDebouncedCallback } from "use-debounce";
+import {
+  Box,
+  Flex,
+  Grid,
+  Text,
+  Stack,
+  Input,
+  IconButton,
+  Center,
+  Spinner,
+  VStack,
+} from "@chakra-ui/react";
+import { Field } from "@/components/ui/field";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+
+const inputProps = {
+  variant: "subtle" as const,
+  bg: "whiteAlpha.50",
+  borderWidth: "1px",
+  borderColor: "whiteAlpha.100",
+  borderRadius: "lg",
+  fontSize: "13px",
+  fontWeight: "500",
+  h: "10",
+  px: "3",
+  _focus: {
+    borderColor: "blue.400/55",
+    bg: "whiteAlpha.80",
+  },
+  _placeholder: { color: "whiteAlpha.300" },
+};
+
+function SectionHeader({
+  icon: Icon,
+  eyebrow,
+  title,
+}: {
+  icon: typeof Store;
+  eyebrow: string;
+  title: string;
+}) {
+  return (
+    <Flex
+      align="center"
+      gap="3"
+      pb="4"
+      mb="1"
+      borderBottomWidth="1px"
+      borderColor="var(--color-edge)"
+    >
+      <Center
+        w="10"
+        h="10"
+        rounded="xl"
+        bg="blue.500/12"
+        color="blue.300"
+        flexShrink={0}
+      >
+        <Icon size={20} strokeWidth={1.75} />
+      </Center>
+      <Box minW="0">
+        <Text
+          fontSize="11px"
+          fontWeight="semibold"
+          color="whiteAlpha.500"
+          textTransform="uppercase"
+          letterSpacing="0.06em"
+        >
+          {eyebrow}
+        </Text>
+        <Text fontSize="lg" fontWeight="700" letterSpacing="-0.02em" mt="0.5">
+          {title}
+        </Text>
+      </Box>
+    </Flex>
+  );
+}
+
+function PremiumLockCard({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <Flex
+      align="center"
+      gap="4"
+      p="4"
+      rounded="xl"
+      bg="whiteAlpha.50"
+      borderWidth="1px"
+      borderStyle="dashed"
+      borderColor="whiteAlpha.100"
+    >
+      <Center w="10" h="10" rounded="full" bg="blue.500/10" color="blue.300" flexShrink={0}>
+        <Lock size={18} />
+      </Center>
+      <Box flex="1" minW="0">
+        <Text fontSize="sm" fontWeight="semibold">
+          {title}
+        </Text>
+        <Text fontSize="12px" color="whiteAlpha.500" mt="1" lineHeight="short">
+          {description}
+        </Text>
+        <Button asChild size="sm" colorPalette="blue" mt="3" rounded="lg" fontWeight="600">
+          <Link href="/paywall">Ver planos</Link>
+        </Button>
+      </Box>
+    </Flex>
+  );
+}
 
 export function SettingsTab() {
   const {
     loja,
     userId,
-    updateLojaLocally,
     setLoja,
     updatePrinterStatus,
     isLoading: isAppLoading,
@@ -38,36 +144,36 @@ export function SettingsTab() {
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  // 1. Sincroniza o local apenas quando a loja global mudar (e não for por digitação nossa)
   useEffect(() => {
     setLocalLoja(loja);
   }, [loja]);
 
-  // 2. Debounce exclusivo para persistência dos campos de texto usando biblioteca oficial
-  const debouncedSave = useDebouncedCallback((updatedLoja) => {
+  const debouncedSave = useDebouncedCallback((updatedLoja: typeof loja) => {
     setLoja(updatedLoja);
   }, 800);
 
   useEffect(() => {
-    const fieldsToDebounce = ["nome", "telefone", "endereco", "mensagem_rodape"] as const;
-    const hasChanged = fieldsToDebounce.some(f => localLoja[f] !== loja[f]);
+    const fieldsToDebounce = [
+      "nome",
+      "telefone",
+      "endereco",
+      "mensagem_rodape",
+    ] as const;
+    const hasChanged = fieldsToDebounce.some((f) => localLoja[f] !== loja[f]);
 
     if (hasChanged) {
       debouncedSave({ ...loja, ...localLoja });
     }
   }, [localLoja, loja, debouncedSave, setLoja]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-32">
-        <div className="w-10 h-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
-      </div>
-    );
-  }
+  type LojaDebouncedStringField =
+    | "nome"
+    | "telefone"
+    | "endereco"
+    | "mensagem_rodape";
 
-  // Helper para atualizações locais rápidas (inputs)
-  const handleTextChange = (field: keyof typeof localLoja, value: string) => {
-    setLocalLoja(prev => ({ ...prev, [field]: value }));
+  const handleTextChange = (field: LojaDebouncedStringField, value: string) => {
+    setLocalLoja((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,23 +185,18 @@ export function SettingsTab() {
       return;
     }
 
-    // Preview local imediato
     const reader = new FileReader();
     reader.onloadend = () => setLocalPreview(reader.result as string);
     reader.readAsDataURL(file);
 
     try {
       setIsUploading(true);
-      toast.loading("Enviando logo...", { id: "upload-logo" });
       const publicUrl = await StorageService.uploadLogo(file, userId);
-      
-      // Ação direta: salva no banco e apaga o preview local
       await setLoja({ ...loja, logo_url: publicUrl, logo_metodo: "dither" });
       setLocalPreview(null);
-      
-      toast.success("Logo enviada com sucesso!", { id: "upload-logo" });
-    } catch (error) {
-      toast.error("Erro ao enviar logo. Tente novamente.", { id: "upload-logo" });
+      toast.success("Logo enviada com sucesso!");
+    } catch {
+      toast.error("Erro ao enviar logo.");
       setLocalPreview(null);
     } finally {
       setIsUploading(false);
@@ -113,203 +214,332 @@ export function SettingsTab() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <Center py="24">
+        <Spinner size="lg" color="blue.400" borderWidth="3px" />
+      </Center>
+    );
+  }
+
   return (
-    <div className="max-w-6xl mx-auto pb-24 lg:pb-0 space-y-8 pt-4">
-      <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-8 items-start">
-        {/* Coluna Esquerda: Assinatura */}
-        <div className="space-y-8 h-full">
+    <VStack align="stretch" gap={{ base: 5, lg: 6 }} w="full" maxW={{ lg: "100%" }}>
+      <Grid
+        templateColumns={{ base: "1fr", lg: "minmax(280px, 340px) 1fr" }}
+        gap={{ base: 5, lg: 6 }}
+        alignItems="start"
+      >
+        <Box position={{ base: "static", lg: "sticky" }} top={{ lg: 6 }} w="full">
           <SubscriptionCard />
-        </div>
+        </Box>
 
-        {/* Coluna Direita: Informações da Loja */}
-        <div className="glass-panel overflow-hidden border-white/[0.05] shadow-2xl h-full flex flex-col">
-          <div className="p-8 border-b border-white/[0.05] bg-white/[0.01]">
-            <div className="flex items-center gap-5">
-              <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5">
-                <Store size={24} />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-white tracking-tight">
-                  O Estabelecimento
-                </h2>
-                <p className="text-[10px] text-text-dim font-semibold uppercase tracking-widest">
-                  Identidade Visual do Cupom
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-8 space-y-8 flex-1">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-text-muted px-1">
-                  Nome Fantasia
-                </label>
-                <input
-                  className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm font-semibold text-white focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-text-dim/30"
-                  value={localLoja.nome || ""}
-                  onChange={(e) => handleTextChange("nome", e.target.value)}
-                  placeholder="Ex: Panificadora Central"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-text-muted px-1">
-                  Contato / WhatsApp
-                </label>
-                <input
-                  className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm font-bold text-white focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-text-dim/30 tabular-nums"
-                  value={localLoja.telefone || ""}
-                  onChange={(e) => handleTextChange("telefone", maskPhone(e.target.value))}
-                  placeholder="(00) 00000-0000"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[11px] font-semibold text-text-muted px-1">
-                Endereço Completo
-              </label>
-              <input
-                className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm font-semibold text-white focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-text-dim/30"
-                value={localLoja.endereco || ""}
-                onChange={(e) => handleTextChange("endereco", e.target.value)}
-                placeholder="Rua das Flores, 123"
+        <VStack align="stretch" gap={5}>
+          {/* Dados da loja */}
+          <Box className="app-panel" overflow="hidden">
+            <Box p={{ base: 5, md: 6 }}>
+              <SectionHeader
+                icon={Store}
+                eyebrow="Identificação"
+                title="Dados da loja"
               />
-            </div>
-
-            {isPremium ? (
-              <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-text-muted px-1">
-                  Rodapé do Cupom
-                </label>
-                <input
-                  className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm font-semibold text-white focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-text-dim/30"
-                  value={localLoja.mensagem_rodape || ""}
-                  onChange={(e) => handleTextChange("mensagem_rodape", e.target.value)}
-                  placeholder="Ex: Obrigado pela preferência!"
-                />
-                <p className="text-[10px] text-text-dim px-1">
-                  Frase curta que aparece no final de todos os seus cupons.
-                </p>
-              </div>
-            ) : (
-              <div className="p-6 bg-white/[0.02] border border-dashed border-white/10 rounded-2xl flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                  <Lock size={18} />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-white">Rodapé Personalizado</p>
-                  <p className="text-[11px] text-text-dim mt-1">
-                    Assine o plano Pro para remover ou alterar a frase padrão no fim do cupom.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className="w-full h-[1px] bg-white/5" />
-
-            {isPremium ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between px-1">
-                  <label className="text-[11px] font-semibold text-text-muted">
-                    Logomarca do Comprovante
-                  </label>
-                </div>
-
-                {!loja.logo_url ? (
-                  <div className="relative group overflow-hidden rounded-2xl">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                      disabled={isUploading}
-                      className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer"
+              <Stack gap={5} pt={5}>
+                <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={4}>
+                  <Field label="Nome fantasia">
+                    <Input
+                      {...inputProps}
+                      value={localLoja.nome || ""}
+                      onChange={(e) => handleTextChange("nome", e.target.value)}
+                      placeholder="Ex.: Panificadora Central"
                     />
-                    <div className="flex flex-col items-center justify-center gap-4 p-8 border-2 border-dashed border-white/10 rounded-2xl bg-black/20 transition-all group-hover:border-primary/40 group-hover:bg-primary/5 min-h-[180px]">
-                      {localPreview ? (
-                        <div className="relative group/preview">
-                          <img 
-                            src={localPreview} 
-                            alt="Preview" 
-                            className={`h-24 w-auto object-contain rounded-lg shadow-2xl transition-all ${isUploading ? 'opacity-40 grayscale blur-[2px]' : ''}`}
-                          />
-                          {isUploading && (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="w-8 h-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <>
-                          <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center text-text-dim transition-transform group-hover:scale-110">
-                            <PlusCircle size={24} />
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-white uppercase tracking-widest text-center">
-                              Selecionar Logomarca
-                            </p>
-                            <p className="text-[10px] text-text-dim mt-2 font-medium text-center">
-                              SVG, PNG ou JPG (Otimizado para térmicas)
-                            </p>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between p-6 bg-primary/5 border border-primary/20 rounded-2xl group">
-                    <div className="flex items-center gap-5">
-                      <div className="w-20 h-20 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 overflow-hidden p-2">
-                        <img 
-                          src={loja.logo_url} 
-                          alt="Logo da Loja" 
-                          className="w-full h-full object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-white">
-                          Logomarca Ativada
-                        </p>
-                        <p className="text-xs text-text-dim font-medium mt-1">
-                          Sua marca será impressa no topo do cupom.
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={removeLogo}
-                      className="w-12 h-12 flex items-center justify-center rounded-xl bg-red/5 border border-red/10 text-red hover:bg-red hover:text-white transition-all shadow-lg shadow-red/5"
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="p-6 bg-white/[0.02] border border-dashed border-white/10 rounded-2xl flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                  <Lock size={18} />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-white">Logo no Cupom</p>
-                  <p className="text-[11px] text-text-dim mt-1">
-                    Assine o plano Pro para adicionar sua identidade visual aos
-                    recibos.
-                  </p>
-                </div>
-              </div>
-            )}
+                  </Field>
+                  <Field label="WhatsApp / telefone">
+                    <Input
+                      {...inputProps}
+                      value={localLoja.telefone || ""}
+                      onChange={(e) =>
+                        handleTextChange("telefone", maskPhone(e.target.value))
+                      }
+                      placeholder="(00) 00000-0000"
+                    />
+                  </Field>
+                </Grid>
+                <Field label="Endereço">
+                  <Input
+                    {...inputProps}
+                    value={localLoja.endereco || ""}
+                    onChange={(e) => handleTextChange("endereco", e.target.value)}
+                    placeholder="Rua, número, bairro"
+                  />
+                </Field>
+              </Stack>
+            </Box>
+          </Box>
 
-            <div className="flex items-center gap-3 p-4 bg-primary/5 border border-primary/20 rounded-2xl">
-              <Zap size={14} className="text-primary" />
-              <p className="text-[10px] text-primary font-bold uppercase tracking-widest">
-                Salvamento Automático: Suas alterações são salvas e protegidas
-                na nuvem.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+          {/* Cupom: rodapé + logo */}
+          <Box className="app-panel" overflow="hidden">
+            <Box p={{ base: 5, md: 6 }}>
+              <SectionHeader
+                icon={ImageIcon}
+                eyebrow="Aparência"
+                title="Cupom impresso"
+              />
+              <Stack gap={6} pt={5}>
+                {isPremium ? (
+                  <Field
+                    label="Mensagem de rodapé"
+                    helperText="Texto no final do cupom (linha única curta funciona melhor na térmica)."
+                  >
+                    <Input
+                      {...inputProps}
+                      value={localLoja.mensagem_rodape || ""}
+                      onChange={(e) =>
+                        handleTextChange("mensagem_rodape", e.target.value)
+                      }
+                      placeholder="Ex.: Obrigado pela preferência!"
+                    />
+                  </Field>
+                ) : (
+                  <PremiumLockCard
+                    title="Rodapé personalizado"
+                    description="No Pro você altera a frase padrão do rodapé nos cupons."
+                  />
+                )}
+
+                <Box>
+                  <Text
+                    fontSize="sm"
+                    fontWeight="semibold"
+                    color="whiteAlpha.700"
+                    mb={3}
+                  >
+                    Logomarca
+                  </Text>
+                  {!isPremium ? (
+                    <PremiumLockCard
+                      title="Logo no topo do cupom"
+                      description="Envie PNG ou JPG otimizado para impressão térmica no plano Pro."
+                    />
+                  ) : !loja.logo_url ? (
+                    <Box position="relative" rounded="xl" overflow="hidden">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        disabled={isUploading}
+                        position="absolute"
+                        inset={0}
+                        w="full"
+                        h="full"
+                        opacity={0}
+                        zIndex={2}
+                        cursor="pointer"
+                      />
+                      <Center
+                        flexDir="column"
+                        gap={3}
+                        py={10}
+                        px={4}
+                        borderWidth="1px"
+                        borderStyle="dashed"
+                        borderColor="whiteAlpha.100"
+                        rounded="xl"
+                        bg="whiteAlpha.50"
+                        transition="all 0.15s"
+                        _hover={{ borderColor: "blue.400/35", bg: "blue.500/5" }}
+                        minH="160px"
+                      >
+                        {localPreview ? (
+                          <Box position="relative">
+                            <Box asChild rounded="lg" overflow="hidden" shadow="md">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={localPreview}
+                                alt="Preview"
+                                style={{
+                                  height: "5rem",
+                                  width: "auto",
+                                  maxWidth: "100%",
+                                  objectFit: "contain",
+                                  display: "block",
+                                  opacity: isUploading ? 0.35 : 1,
+                                  filter: isUploading ? "grayscale(1) blur(2px)" : "none",
+                                }}
+                              />
+                            </Box>
+                            {isUploading && (
+                              <Center position="absolute" inset={0}>
+                                <Spinner size="md" color="blue.400" />
+                              </Center>
+                            )}
+                          </Box>
+                        ) : (
+                          <>
+                            <Center
+                              w="12"
+                              h="12"
+                              rounded="full"
+                              bg="whiteAlpha.80"
+                              color="whiteAlpha.400"
+                            >
+                              <PlusCircle size={22} />
+                            </Center>
+                            <Box textAlign="center">
+                              <Text fontSize="sm" fontWeight="semibold">
+                                Enviar imagem
+                              </Text>
+                              <Text fontSize="12px" color="whiteAlpha.500" mt={1}>
+                                PNG ou JPG · ideal largura ~384px na térmica
+                              </Text>
+                            </Box>
+                          </>
+                        )}
+                      </Center>
+                    </Box>
+                  ) : (
+                    <>
+                      {/* Mobile: cabeçalho + remover na mesma linha; preview largo embaixo */}
+                      <VStack
+                        display={{ base: "flex", sm: "none" }}
+                        align="stretch"
+                        gap={4}
+                        p={4}
+                        rounded="xl"
+                        bg="blue.500/6"
+                        borderWidth="1px"
+                        borderColor="blue.400/20"
+                      >
+                        <Flex justify="space-between" align="flex-start" gap={3} w="full">
+                          <Box minW={0} flex="1" pr={2}>
+                            <Text fontSize="sm" fontWeight="semibold">
+                              Logo ativa
+                            </Text>
+                            <Text fontSize="12px" color="whiteAlpha.500" mt={1} lineHeight="short">
+                              Aparece no topo do cupom ao imprimir.
+                            </Text>
+                          </Box>
+                          <IconButton
+                            aria-label="Remover logo"
+                            variant="surface"
+                            colorPalette="red"
+                            rounded="lg"
+                            flexShrink={0}
+                            size="sm"
+                            onClick={removeLogo}
+                          >
+                            <X size={18} />
+                          </IconButton>
+                        </Flex>
+                        <Center
+                          w="full"
+                          minH="120px"
+                          rounded="lg"
+                          bg="whiteAlpha.50"
+                          borderWidth="1px"
+                          borderColor="whiteAlpha.100"
+                          px={4}
+                          py={5}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={loja.logo_url}
+                            alt="Logo da loja"
+                            style={{
+                              maxWidth: "100%",
+                              maxHeight: "132px",
+                              width: "auto",
+                              height: "auto",
+                              objectFit: "contain",
+                              display: "block",
+                            }}
+                          />
+                        </Center>
+                      </VStack>
+
+                      {/* Tablet/desktop: linha compacta */}
+                      <Flex
+                        display={{ base: "none", sm: "flex" }}
+                        align="center"
+                        justify="space-between"
+                        gap={4}
+                        p={4}
+                        rounded="xl"
+                        bg="blue.500/6"
+                        borderWidth="1px"
+                        borderColor="blue.400/20"
+                      >
+                        <Flex align="center" gap={4} minW={0} flex="1">
+                          <Center
+                            w="4.5rem"
+                            h="4.5rem"
+                            rounded="lg"
+                            bg="whiteAlpha.80"
+                            borderWidth="1px"
+                            borderColor="whiteAlpha.100"
+                            p={2}
+                            flexShrink={0}
+                          >
+                            <Box asChild w="full" h="full">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={loja.logo_url}
+                                alt="Logo da loja"
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "contain",
+                                }}
+                              />
+                            </Box>
+                          </Center>
+                          <Box minW={0}>
+                            <Text fontSize="sm" fontWeight="semibold">
+                              Logo ativa
+                            </Text>
+                            <Text fontSize="12px" color="whiteAlpha.500" mt={0.5}>
+                              Aparece no topo do cupom ao imprimir.
+                            </Text>
+                          </Box>
+                        </Flex>
+                        <IconButton
+                          aria-label="Remover logo"
+                          variant="subtle"
+                          colorPalette="red"
+                          rounded="lg"
+                          flexShrink={0}
+                          onClick={removeLogo}
+                        >
+                          <X size={18} />
+                        </IconButton>
+                      </Flex>
+                    </>
+                  )}
+                </Box>
+
+                <Flex
+                  align="center"
+                  gap={2.5}
+                  py={2.5}
+                  px={3}
+                  rounded="lg"
+                  bg="whiteAlpha.50"
+                  borderWidth="1px"
+                  borderColor="var(--color-edge)"
+                >
+                  <Box color="blue.300" flexShrink={0} lineHeight={0}>
+                    <Cloud size={14} />
+                  </Box>
+                  <Text fontSize="12px" color="whiteAlpha.500" lineHeight="short">
+                    <Text as="span" fontWeight="semibold" color="whiteAlpha.700">
+                      Salvamento automático.
+                    </Text>{" "}
+                    Alterações nos dados da loja são sincronizadas na nuvem.
+                  </Text>
+                </Flex>
+              </Stack>
+            </Box>
+          </Box>
+        </VStack>
+      </Grid>
+    </VStack>
   );
 }

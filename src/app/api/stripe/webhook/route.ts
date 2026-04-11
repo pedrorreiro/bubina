@@ -37,8 +37,9 @@ export async function POST(req: NextRequest) {
   try {
     await SubscriptionService.processWebhookEvent(supabase, event);
     return NextResponse.json({ received: true });
-  } catch (e: any) {
-    console.error("❌ [Webhook] Erro no processamento:", e.message);
+  } catch (e) {
+    const error = e as Error;
+    console.error("❌ [Webhook] Erro no processamento:", error.message);
     return NextResponse.json(
       { error: "Erro interno no processamento do webhook" },
       { status: 500 }
