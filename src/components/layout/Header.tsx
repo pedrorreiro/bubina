@@ -28,6 +28,7 @@ import {
   VStack,
   Badge,
   Center,
+  Image,
 } from "@chakra-ui/react";
 import {
   MenuContent,
@@ -220,8 +221,7 @@ export function Header() {
                     _hover={{ color: "white", borderColor: "blue.500/50" }}
                   >
                     {loja.logo_url ? (
-                      <Box
-                        as="img"
+                      <Image
                         src={loja.logo_url}
                         alt="Logo da loja"
                         w="full"
