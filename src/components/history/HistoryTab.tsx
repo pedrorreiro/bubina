@@ -4,7 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
 import { toast } from "sonner";
-import { getHistorico, deleteHistorico as apiDeleteHistorico } from "@/services/api";
+import {
+  getHistorico,
+  deleteHistorico as apiDeleteHistorico,
+} from "@/services/api";
 import { normalizeHistoricoPedido } from "@/lib/pedidos-normalize";
 import type { HistoricoPedido, Pedido } from "@/types";
 import {
@@ -107,7 +110,10 @@ export function HistoryTab() {
     router.push("/pedido");
   };
 
-  const handleReimprimir = async (venda: HistoricoPedido, e: React.MouseEvent) => {
+  const handleReimprimir = async (
+    venda: HistoricoPedido,
+    e: React.MouseEvent,
+  ) => {
     e.stopPropagation();
     if (printerStatus !== "connected") {
       toast.error("Conecte a impressora no topo da tela");
@@ -151,7 +157,12 @@ export function HistoryTab() {
   }
 
   return (
-    <VStack align="stretch" gap={{ base: 4, md: 5 }} w="full" pb={{ base: 1, md: 0 }}>
+    <VStack
+      align="stretch"
+      gap={{ base: 4, md: 5 }}
+      w="full"
+      pb={{ base: 1, md: 0 }}
+    >
       <Box {...appPanelProps} overflow="hidden">
         <Flex
           direction={{ base: "column", sm: "row" }}
@@ -181,7 +192,12 @@ export function HistoryTab() {
               >
                 Registros
               </Text>
-              <Text fontSize="lg" fontWeight="700" letterSpacing="-0.02em" mt="0.5">
+              <Text
+                fontSize="lg"
+                fontWeight="700"
+                letterSpacing="-0.02em"
+                mt="0.5"
+              >
                 Histórico de vendas
               </Text>
             </Box>
@@ -196,7 +212,12 @@ export function HistoryTab() {
             justify="center"
             flexShrink={0}
           >
-            <Text fontSize="xl" fontWeight="800" color="white" fontVariantNumeric="tabular-nums">
+            <Text
+              fontSize="xl"
+              fontWeight="800"
+              color="white"
+              fontVariantNumeric="tabular-nums"
+            >
               {historico.length}
             </Text>
             <Text fontSize="11px" fontWeight="600" color="whiteAlpha.500">
@@ -233,8 +254,15 @@ export function HistoryTab() {
               <Text fontWeight="semibold" fontSize="sm">
                 Nenhuma venda ainda
               </Text>
-              <Text fontSize="13px" color="whiteAlpha.500" mt={2} maxW="280px" lineHeight="short">
-                Ao imprimir um cupom na tela de pedido, a venda aparece aqui para consulta ou reabertura.
+              <Text
+                fontSize="13px"
+                color="whiteAlpha.500"
+                mt={2}
+                maxW="280px"
+                lineHeight="short"
+              >
+                Ao imprimir um cupom na tela de pedido, a venda aparece aqui
+                para consulta ou reabertura.
               </Text>
             </Center>
           </Box>
@@ -265,7 +293,12 @@ export function HistoryTab() {
                   align={{ base: "stretch", md: "center" }}
                   gap={{ base: 4, md: 5 }}
                 >
-                  <VStack align="start" gap={1} flexShrink={0} minW={{ md: "140px" }}>
+                  <VStack
+                    align="start"
+                    gap={1}
+                    flexShrink={0}
+                    minW={{ md: "140px" }}
+                  >
                     <HStack gap={2} color="blue.300">
                       <Calendar size={14} />
                       <Text fontSize="sm" fontWeight="semibold">
@@ -307,7 +340,12 @@ export function HistoryTab() {
                           <Package size={14} />
                         </Center>
                         <VStack align="start" gap={0} minW={0}>
-                          <Text fontSize="10px" fontWeight="semibold" color="whiteAlpha.500" textTransform="uppercase">
+                          <Text
+                            fontSize="10px"
+                            fontWeight="semibold"
+                            color="whiteAlpha.500"
+                            textTransform="uppercase"
+                          >
                             Itens
                           </Text>
                           <Text fontSize="sm" fontWeight="700">
@@ -316,7 +354,11 @@ export function HistoryTab() {
                         </VStack>
                       </HStack>
 
-                      <HStack gap={2} minW="0" maxW={{ base: "full", sm: "200px" }}>
+                      <HStack
+                        gap={2}
+                        minW="0"
+                        maxW={{ base: "full", sm: "200px" }}
+                      >
                         <Center
                           w="8"
                           h="8"
@@ -328,11 +370,21 @@ export function HistoryTab() {
                           <User size={14} />
                         </Center>
                         <VStack align="start" gap={0} minW={0}>
-                          <Text fontSize="10px" fontWeight="semibold" color="whiteAlpha.500" textTransform="uppercase">
+                          <Text
+                            fontSize="10px"
+                            fontWeight="semibold"
+                            color="whiteAlpha.500"
+                            textTransform="uppercase"
+                          >
                             Cliente
                           </Text>
-                          <Text fontSize="sm" fontWeight="semibold" truncate w="full">
-                            {venda.cpf ? `CPF ${venda.cpf}` : "Consumidor final"}
+                          <Text
+                            fontSize="sm"
+                            fontWeight="semibold"
+                            truncate
+                            w="full"
+                          >
+                            {venda.cpf ? `CPF ${venda.cpf}` : "Não informado"}
                           </Text>
                         </VStack>
                       </HStack>
@@ -346,7 +398,12 @@ export function HistoryTab() {
                       w={{ base: "full", md: "auto" }}
                     >
                       <VStack align={{ base: "start", md: "end" }} gap={0}>
-                        <Text fontSize="10px" fontWeight="semibold" color="whiteAlpha.500" textTransform="uppercase">
+                        <Text
+                          fontSize="10px"
+                          fontWeight="semibold"
+                          color="whiteAlpha.500"
+                          textTransform="uppercase"
+                        >
                           Total
                         </Text>
                         <HStack align="baseline" gap={1}>
@@ -405,7 +462,12 @@ export function HistoryTab() {
                   </Flex>
                 </Flex>
 
-                <Text fontSize="11px" color="whiteAlpha.400" mt={3} display={{ base: "block", md: "none" }}>
+                <Text
+                  fontSize="11px"
+                  color="whiteAlpha.400"
+                  mt={3}
+                  display={{ base: "block", md: "none" }}
+                >
                   Toque para reabrir na comanda
                 </Text>
               </Box>
