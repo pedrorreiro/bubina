@@ -1,33 +1,33 @@
-import { useState, useEffect, useCallback } from "react";
-import { SubscriptionStatus } from "@/types";
+import { useCallback, useState } from "react";
 import { Api } from "@/services/api";
+import { useApp } from "@/context/AppContext";
 
 /**
  * Hook para gerenciar operações e estado de assinatura Stripe.
  * Centraliza chamadas aos endpoints e expõe o status atual mastigado.
  */
 export function useSubscription() {
-  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(
-    null,
-  );
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    subscription,
+    setSubscriptionState,
+    isLoading: isAppLoading,
+  } = useApp();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   /** Verifica o status atual da assinatura */
   const refreshSubscription = useCallback(async () => {
+    setIsRefreshing(true);
     try {
       const data = await Api.subscription.getStatus();
-      setSubscription(data);
+      setSubscriptionState(data);
+      return data;
     } catch (error) {
       console.error("Erro ao verificar assinatura:", error);
+      throw error;
     } finally {
-      setIsLoading(false);
+      setIsRefreshing(false);
     }
-  }, []);
-
-  // Carregar dados inicialmente
-  useEffect(() => {
-    refreshSubscription();
-  }, [refreshSubscription]);
+  }, [setSubscriptionState]);
 
   /** Cria uma sessão de checkout no Stripe e retorna a URL */
   const createCheckout = async (priceType: "monthly" | "annual") => {
@@ -42,15 +42,15 @@ export function useSubscription() {
   /** Solicita o cancelamento da assinatura ao final do período */
   const cancelSubscription = async () => {
     const data = await Api.stripe.cancel();
-    
-    // Atualizar o estado local após o cancelamento
+
+    // Atualizar estado global após o cancelamento
     await refreshSubscription();
     return data;
   };
 
   return {
     subscription,
-    isLoading,
+    isLoading: isAppLoading || isRefreshing,
     refreshSubscription,
     createCheckout,
     openPortal,

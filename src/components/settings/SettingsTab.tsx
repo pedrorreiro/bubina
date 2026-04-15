@@ -3,12 +3,9 @@
 import { useState, useEffect } from "react";
 import { useApp } from "@/context/AppContext";
 import { toast } from "sonner";
-import { SubscriptionCard } from "@/components/subscription/SubscriptionCard";
-import { Store, X, Lock, PlusCircle, ImageIcon, Cloud } from "lucide-react";
+import { X, Lock, PlusCircle, ImageIcon } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
-import { maskPhone } from "@/lib/utils";
 import { StorageService } from "@/services/storage";
-import { useDebouncedCallback } from "use-debounce";
 import {
   Box,
   Flex,
@@ -25,6 +22,7 @@ import { Field } from "@/components/ui/field";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { appPanelProps } from "@/theme/layout";
+import type { Loja } from "@/types";
 
 const inputProps = {
   variant: "subtle" as const,
@@ -43,15 +41,24 @@ const inputProps = {
   _placeholder: { color: "whiteAlpha.300" },
 };
 
-function SectionHeader({
-  icon: Icon,
-  eyebrow,
-  title,
-}: {
-  icon: typeof Store;
-  eyebrow: string;
-  title: string;
-}) {
+const DEBOUNCED_FIELDS = ["mensagem_rodape"] as const;
+
+type LojaDebouncedStringField = (typeof DEBOUNCED_FIELDS)[number];
+
+function normalizeField(value: string | null | undefined) {
+  return (value ?? "").trim();
+}
+
+function hasStoreFieldChanges(
+  base: Pick<Loja, LojaDebouncedStringField>,
+  next: Pick<Loja, LojaDebouncedStringField>,
+) {
+  return DEBOUNCED_FIELDS.some(
+    (field) => normalizeField(base[field]) !== normalizeField(next[field]),
+  );
+}
+
+function SectionHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
     <Flex
       align="center"
@@ -69,7 +76,7 @@ function SectionHeader({
         color="blue.300"
         flexShrink={0}
       >
-        <Icon size={20} strokeWidth={1.75} />
+        <ImageIcon size={20} strokeWidth={1.75} />
       </Center>
       <Box minW="0">
         <Text
@@ -144,37 +151,33 @@ export function SettingsTab() {
   const [localLoja, setLocalLoja] = useState(loja);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSavingCupom, setIsSavingCupom] = useState(false);
 
   useEffect(() => {
     setLocalLoja(loja);
   }, [loja]);
 
-  const debouncedSave = useDebouncedCallback((updatedLoja: typeof loja) => {
-    setLoja(updatedLoja);
-  }, 800);
-
-  useEffect(() => {
-    const fieldsToDebounce = [
-      "nome",
-      "telefone",
-      "endereco",
-      "mensagem_rodape",
-    ] as const;
-    const hasChanged = fieldsToDebounce.some((f) => localLoja[f] !== loja[f]);
-
-    if (hasChanged) {
-      debouncedSave({ ...loja, ...localLoja });
-    }
-  }, [localLoja, loja, debouncedSave, setLoja]);
-
-  type LojaDebouncedStringField =
-    | "nome"
-    | "telefone"
-    | "endereco"
-    | "mensagem_rodape";
-
   const handleTextChange = (field: LojaDebouncedStringField, value: string) => {
     setLocalLoja((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const hasPendingCupomChanges = hasStoreFieldChanges(loja, localLoja);
+
+  const handleSaveCupom = async () => {
+    if (!hasPendingCupomChanges) return;
+
+    const updatedLoja = { ...loja, ...localLoja };
+    try {
+      setIsSavingCupom(true);
+      await setLoja(updatedLoja);
+      toast.success("Configurações do cupom salvas");
+    } catch (e) {
+      toast.error(
+        `Erro ao salvar configurações do cupom: ${e instanceof Error ? e.message : e}`,
+      );
+    } finally {
+      setIsSavingCupom(false);
+    }
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -225,80 +228,27 @@ export function SettingsTab() {
 
   return (
     <VStack align="stretch" gap={{ base: 5, lg: 6 }} w="full" maxW={{ lg: "100%" }}>
-      <Grid
-        templateColumns={{ base: "1fr", lg: "minmax(280px, 340px) 1fr" }}
-        gap={{ base: 5, lg: 6 }}
-        alignItems="start"
-      >
-        <Box position={{ base: "static", lg: "sticky" }} top={{ lg: 6 }} w="full">
-          <SubscriptionCard />
-        </Box>
-
-        <VStack align="stretch" gap={5}>
-          {/* Dados da loja */}
-          <Box {...appPanelProps} overflow="hidden">
-            <Box p={{ base: 5, md: 6 }}>
-              <SectionHeader
-                icon={Store}
-                eyebrow="Identificação"
-                title="Dados da loja"
-              />
-              <Stack gap={5} pt={5}>
-                <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={4}>
-                  <Field label="Nome fantasia">
-                    <Input
-                      {...inputProps}
-                      value={localLoja.nome || ""}
-                      onChange={(e) => handleTextChange("nome", e.target.value)}
-                      placeholder="Ex.: Panificadora Central"
-                    />
-                  </Field>
-                  <Field label="WhatsApp / telefone">
-                    <Input
-                      {...inputProps}
-                      value={localLoja.telefone || ""}
-                      onChange={(e) =>
-                        handleTextChange("telefone", maskPhone(e.target.value))
-                      }
-                      placeholder="(00) 00000-0000"
-                    />
-                  </Field>
-                </Grid>
-                <Field label="Endereço">
-                  <Input
-                    {...inputProps}
-                    value={localLoja.endereco || ""}
-                    onChange={(e) => handleTextChange("endereco", e.target.value)}
-                    placeholder="Rua, número, bairro"
-                  />
-                </Field>
-              </Stack>
-            </Box>
-          </Box>
-
-          {/* Cupom: rodapé + logo */}
-          <Box {...appPanelProps} overflow="hidden">
-            <Box p={{ base: 5, md: 6 }}>
-              <SectionHeader
-                icon={ImageIcon}
-                eyebrow="Aparência"
-                title="Cupom impresso"
-              />
-              <Stack gap={6} pt={5}>
+      <Grid templateColumns="1fr" gap={{ base: 5, lg: 6 }} alignItems="start">
+        <Box {...appPanelProps} overflow="hidden">
+          <Box p={{ base: 5, md: 6 }}>
+            <SectionHeader eyebrow="Aparência" title="Cupom impresso" />
+            <Stack gap={6} pt={5}>
                 {isPremium ? (
-                  <Field
-                    label="Mensagem de rodapé"
-                    helperText="Texto no final do cupom (linha única curta funciona melhor na térmica)."
-                  >
-                    <Input
-                      {...inputProps}
-                      value={localLoja.mensagem_rodape || ""}
-                      onChange={(e) =>
-                        handleTextChange("mensagem_rodape", e.target.value)
-                      }
-                      placeholder="Ex.: Obrigado pela preferência!"
-                    />
-                  </Field>
+                  <>
+                    <Field
+                      label="Mensagem de rodapé"
+                      helperText="Texto no final do cupom (linha única curta funciona melhor na térmica)."
+                    >
+                      <Input
+                        {...inputProps}
+                        value={localLoja.mensagem_rodape || ""}
+                        onChange={(e) =>
+                          handleTextChange("mensagem_rodape", e.target.value)
+                        }
+                        placeholder="Ex.: Obrigado pela preferência!"
+                      />
+                    </Field>
+                  </>
                 ) : (
                   <PremiumLockCard
                     title="Rodapé personalizado"
@@ -516,30 +466,20 @@ export function SettingsTab() {
                   )}
                 </Box>
 
-                <Flex
-                  align="center"
-                  gap={2.5}
-                  py={2.5}
-                  px={3}
+              <Flex justify="flex-end">
+                <Button
+                  colorPalette="blue"
                   rounded="lg"
-                  bg="whiteAlpha.50"
-                  borderWidth="1px"
-                  borderColor="var(--color-edge)"
+                  onClick={handleSaveCupom}
+                  disabled={!hasPendingCupomChanges || isSavingCupom}
+                  loading={isSavingCupom}
                 >
-                  <Box color="blue.300" flexShrink={0} lineHeight={0}>
-                    <Cloud size={14} />
-                  </Box>
-                  <Text fontSize="12px" color="whiteAlpha.500" lineHeight="short">
-                    <Text as="span" fontWeight="semibold" color="whiteAlpha.700">
-                      Salvamento automático.
-                    </Text>{" "}
-                    Alterações nos dados da loja são sincronizadas na nuvem.
-                  </Text>
-                </Flex>
-              </Stack>
-            </Box>
+                  Salvar alterações
+                </Button>
+              </Flex>
+            </Stack>
           </Box>
-        </VStack>
+        </Box>
       </Grid>
     </VStack>
   );

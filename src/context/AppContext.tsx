@@ -63,6 +63,7 @@ interface AppState {
   userEmail: string | null;
   setIsAuthenticated: (b: boolean) => void;
   subscription: SubscriptionStatus | null;
+  setSubscriptionState: (s: SubscriptionStatus | null) => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -93,27 +94,62 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Sincroniza estado de autenticação via API interna (Proxy)
     // Isso evita que o browser bata direto no Supabase.
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((data) => {
+    let cancelled = false;
+
+    async function bootstrapAppState() {
+      try {
+        const res = await fetch("/api/auth/me", { cache: "no-store" });
+        const data = await res.json();
+        if (cancelled) return;
+
         setIsAuthenticated(data.authenticated);
         if (!data.authenticated) {
           setUserId(null);
           setUserEmail(null);
+          setHasLoja(false);
+          setLojaState(DEFAULT_LOJA);
+          return;
         }
+
         if (data.user) {
           setUserId(data.user.id ?? null);
           setUserEmail(data.user.email ?? null);
         }
+
         if (data.loja) {
           setLojaState(data.loja);
           setHasLoja(true);
+        } else {
+          // Fallback defensivo: se /auth/me vier sem loja, tenta endpoint dedicado.
+          try {
+            const lojaRes = await fetch("/api/loja", { cache: "no-store" });
+            if (!lojaRes.ok) throw new Error("Falha ao buscar loja");
+            const lojaData = await lojaRes.json();
+            if (!cancelled && lojaData) {
+              setLojaState(lojaData);
+              setHasLoja(true);
+            }
+          } catch {
+            if (!cancelled) {
+              setHasLoja(false);
+              setLojaState(DEFAULT_LOJA);
+            }
+          }
         }
+
         if (data.subscription) {
           setSubscription(data.subscription);
         }
-      })
-      .finally(() => setIsLoading(false));
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    bootstrapAppState();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // ── Printer ────────────────────────────────────────────────────────────────
@@ -275,6 +311,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         userId,
         setIsAuthenticated,
         subscription,
+        setSubscriptionState: setSubscription,
       }}
     >
       {children}

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Printer,
@@ -16,6 +16,7 @@ import {
   Unplug,
   User,
   LogOut,
+  CircleUserRound,
 } from "lucide-react";
 import {
   Box,
@@ -50,8 +51,10 @@ export function Header() {
     connectPrinter,
     disconnectPrinter,
     userEmail,
+    loja,
   } = useApp();
   const pathname = usePathname();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -206,11 +209,29 @@ export function Header() {
                   <IconButton
                     variant="subtle"
                     borderRadius="full"
-                    bg="whiteAlpha.50"
+                    bg="transparent"
+                    borderWidth="1.5px"
+                    borderColor="whiteAlpha.200"
                     color="whiteAlpha.600"
+                    p="0"
+                    minW="8"
+                    h="8"
+                    overflow="hidden"
                     _hover={{ color: "white", borderColor: "blue.500/50" }}
                   >
-                    <User size={16} />
+                    {loja.logo_url ? (
+                      <Box
+                        as="img"
+                        src={loja.logo_url}
+                        alt="Logo da loja"
+                        w="full"
+                        h="full"
+                        borderRadius="full"
+                        objectFit="cover"
+                      />
+                    ) : (
+                      <User size={16} />
+                    )}
                   </IconButton>
                 </MenuTrigger>
                 <MenuContent
@@ -243,6 +264,17 @@ export function Header() {
                       {userEmail}
                     </Text>
                   </Box>
+                  <MenuItem
+                    value="account"
+                    onClick={() => router.push("/conta")}
+                    borderRadius="lg"
+                    p="3"
+                  >
+                    <CircleUserRound size={16} />
+                    <Text fontSize="xs" fontWeight="semibold">
+                      Minha conta
+                    </Text>
+                  </MenuItem>
                   <MenuItem
                     value="logout"
                     onClick={handleLogout}
