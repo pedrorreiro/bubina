@@ -18,13 +18,20 @@ async function fetchStripePrice(
   if (!priceId) return null;
 
   const price = await stripe.prices.retrieve(priceId);
-  if (!price || price.deleted || price.unit_amount === null) return null;
+  if (("deleted" in price && price.deleted) || price.unit_amount === null) {
+    return null;
+  }
+
+  const interval =
+    price.recurring?.interval === "month" || price.recurring?.interval === "year"
+      ? price.recurring.interval
+      : null;
 
   return {
     id: price.id,
     unitAmount: price.unit_amount,
     currency: price.currency,
-    interval: price.recurring?.interval ?? null,
+    interval,
   };
 }
 
