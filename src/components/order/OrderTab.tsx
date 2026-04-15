@@ -82,19 +82,20 @@ interface SortableItemProps {
 
 const inputProps = {
   variant: "subtle" as const,
-  bg: "whiteAlpha.50",
+  bg: "whiteAlpha.100",
   borderWidth: "1px",
-  borderColor: "whiteAlpha.100",
+  borderColor: "whiteAlpha.200",
   borderRadius: "lg",
   fontSize: "13px",
   fontWeight: "500",
+  color: "whiteAlpha.950",
   h: "10",
   px: "3",
   _focus: {
-    borderColor: "blue.400/55",
-    bg: "whiteAlpha.80",
+    borderColor: "blue.300",
+    bg: "whiteAlpha.200",
   },
-  _placeholder: { color: "whiteAlpha.300" },
+  _placeholder: { color: "whiteAlpha.500" },
 };
 
 function SortableItem({
@@ -583,17 +584,20 @@ export function OrderTab() {
   const subtotal = calcSubtotal();
   const total = calcTotal();
   const hasDescontos = descontos.length > 0;
+  const panelBg = "#10141d";
+  const panelShadow = "0 14px 30px rgba(0, 0, 0, 0.35)";
 
   /* ── Input shared style ─────────────────────────────────────────────────── */
   const inputStyle = {
-    bg: "whiteAlpha.50",
+    bg: "whiteAlpha.100",
     borderWidth: "1px",
-    borderColor: "whiteAlpha.100",
+    borderColor: "whiteAlpha.200",
     borderRadius: "lg",
     fontSize: "13px",
     fontWeight: "500",
-    _focus: { borderColor: "blue.400/60", bg: "whiteAlpha.100" },
-    _placeholder: { color: "whiteAlpha.300" },
+    color: "whiteAlpha.950",
+    _focus: { borderColor: "blue.300", bg: "whiteAlpha.200" },
+    _placeholder: { color: "whiteAlpha.500" },
     transition: "all 0.15s",
   } as const;
 
@@ -607,13 +611,12 @@ export function OrderTab() {
       {/* ── Mobile tab bar ────────────────────────────────────────────────── */}
       <HStack
         display={{ base: "flex", lg: "none" }}
-        bg="whiteAlpha.50"
+        bg={panelBg}
         p="1"
         rounded="lg"
         gap="1"
         mb="4"
-        borderWidth="1px"
-        borderColor="whiteAlpha.100"
+        boxShadow={panelShadow}
       >
         {[
           { key: "venda" as const, label: "Comanda", count: itens.length },
@@ -665,10 +668,10 @@ export function OrderTab() {
             base: mobileView === "venda" ? "flex" : "none",
             lg: "flex",
           }}
-          bg="var(--color-surface)"
+          bg={panelBg}
           rounded={{ base: "xl", lg: "2xl" }}
-          borderWidth="1px"
-          borderColor="var(--color-edge)"
+          borderWidth="0"
+          boxShadow={panelShadow}
           overflow="hidden"
           maxH={{ lg: "100%" }}
         >
@@ -703,7 +706,7 @@ export function OrderTab() {
                 variant="ghost"
                 size="sm"
                 rounded="lg"
-                color="whiteAlpha.400"
+                color="whiteAlpha.700"
                 onClick={() => setIsPreviewOpen(true)}
                 aria-label="Preview"
               >
@@ -725,11 +728,11 @@ export function OrderTab() {
               placeholder="CPF (opcional)"
               borderBottomColor="whiteAlpha.100"
               _focus={{ borderBottomColor: "blue.400" }}
-              _placeholder={{ color: "whiteAlpha.300" }}
+              _placeholder={{ color: "whiteAlpha.500" }}
             />
           </Flex>
 
-          <Separator borderColor="var(--color-edge)" />
+          <Separator borderColor="whiteAlpha.200" />
 
           {/* Item list */}
           <Box
@@ -741,7 +744,7 @@ export function OrderTab() {
           >
             {itens.length === 0 ? (
               <Center flexDir="column" py="16" opacity={0.4}>
-                <Text fontSize="13px" fontWeight="500" color="whiteAlpha.500">
+                <Text fontSize="13px" fontWeight="500" color="whiteAlpha.700">
                   Comanda vazia
                 </Text>
               </Center>
@@ -805,7 +808,7 @@ export function OrderTab() {
             )}
           </Box>
 
-          <Separator borderColor="var(--color-edge)" />
+          <Separator borderColor="whiteAlpha.200" />
 
           {/* Footer — totals + CTA */}
           <Box px="5" py="4" flexShrink={0}>
@@ -814,13 +817,13 @@ export function OrderTab() {
               <Flex
                 justify="space-between"
                 fontSize="13px"
-                color="whiteAlpha.500"
+                color="whiteAlpha.800"
               >
                 <Text>Subtotal</Text>
                 <Text
                   fontWeight="600"
                   fontVariantNumeric="tabular-nums"
-                  color="whiteAlpha.700"
+                  color="whiteAlpha.900"
                 >
                   R$ {subtotal.toFixed(2).replace(".", ",")}
                 </Text>
@@ -867,7 +870,7 @@ export function OrderTab() {
                 <Text
                   fontSize="12px"
                   fontWeight="600"
-                  color="whiteAlpha.500"
+                  color="whiteAlpha.800"
                   textTransform="uppercase"
                   letterSpacing="0.06em"
                 >
@@ -917,7 +920,7 @@ export function OrderTab() {
               {printerStatus !== "connected" && (
                 <HStack justify="center" gap="2" py="1">
                   <Circle size="1.5" bg="red.400" />
-                  <Text fontSize="11px" color="whiteAlpha.400">
+                  <Text fontSize="11px" color="whiteAlpha.600">
                     Impressora desconectada
                   </Text>
                 </HStack>
@@ -941,10 +944,10 @@ export function OrderTab() {
         >
           {/* ── Add manual item ───────────────────────────────────────── */}
           <Box
-            bg="var(--color-surface)"
+            bg={panelBg}
             rounded={{ base: "xl", lg: "2xl" }}
-            borderWidth="1px"
-            borderColor="var(--color-edge)"
+            borderWidth="0"
+            boxShadow={panelShadow}
             px={{ base: 6, md: 5 }}
             py={{ base: 6, md: 5 }}
             flexShrink={0}
@@ -952,7 +955,7 @@ export function OrderTab() {
             <Text
               fontSize="12px"
               fontWeight="600"
-              color="whiteAlpha.500"
+              color="whiteAlpha.800"
               textTransform="uppercase"
               letterSpacing="0.06em"
               mb="3"
@@ -1020,10 +1023,10 @@ export function OrderTab() {
 
           {/* ── Discount ──────────────────────────────────────────────── */}
           <Box
-            bg="var(--color-surface)"
+            bg={panelBg}
             rounded={{ base: "xl", lg: "2xl" }}
-            borderWidth="1px"
-            borderColor="var(--color-edge)"
+            borderWidth="0"
+            boxShadow={panelShadow}
             px={{ base: 6, md: 5 }}
             py={{ base: 6, md: 5 }}
             flexShrink={0}
@@ -1031,7 +1034,7 @@ export function OrderTab() {
             <Text
               fontSize="12px"
               fontWeight="600"
-              color="whiteAlpha.500"
+              color="whiteAlpha.800"
               textTransform="uppercase"
               letterSpacing="0.06em"
               mb="3"
@@ -1053,9 +1056,9 @@ export function OrderTab() {
                 w={{ base: "full", md: "auto" }}
               >
                 <HStack
-                  bg="whiteAlpha.50"
+                  bg="whiteAlpha.100"
                   borderWidth="1px"
-                  borderColor="whiteAlpha.100"
+                  borderColor="whiteAlpha.200"
                   rounded="lg"
                   p="0.5"
                   gap="0.5"
@@ -1122,10 +1125,10 @@ export function OrderTab() {
           <Box
             flex="1"
             minH="0"
-            bg="var(--color-surface)"
+            bg={panelBg}
             rounded={{ base: "xl", lg: "2xl" }}
-            borderWidth="1px"
-            borderColor="var(--color-edge)"
+            borderWidth="0"
+            boxShadow={panelShadow}
             display="flex"
             flexDirection="column"
             overflow="hidden"
@@ -1140,14 +1143,14 @@ export function OrderTab() {
               <Text
                 fontSize="12px"
                 fontWeight="600"
-                color="whiteAlpha.500"
+                color="whiteAlpha.800"
                 textTransform="uppercase"
                 letterSpacing="0.06em"
               >
                 Catálogo
               </Text>
               {isPremium && produtos.length > 0 && (
-                <Text fontSize="11px" color="whiteAlpha.400">
+                <Text fontSize="11px" color="whiteAlpha.700">
                   {produtos.length}{" "}
                   {produtos.length === 1 ? "produto" : "produtos"}
                 </Text>
@@ -1171,7 +1174,7 @@ export function OrderTab() {
                   bg="whiteAlpha.50"
                   borderWidth="1px"
                   borderStyle="dashed"
-                  borderColor="whiteAlpha.100"
+                  borderColor="whiteAlpha.300"
                 >
                   <Circle size="12" bg="blue.500/10" color="blue.300">
                     <Lock size={20} />
@@ -1180,7 +1183,7 @@ export function OrderTab() {
                     <Text fontWeight="600" fontSize="14px" mb="1">
                       Catálogo Premium
                     </Text>
-                    <Text fontSize="12px" color="whiteAlpha.400" maxW="240px">
+                    <Text fontSize="12px" color="whiteAlpha.700" maxW="240px">
                       Salve seus produtos e venda com um toque.
                     </Text>
                   </Box>
@@ -1197,10 +1200,10 @@ export function OrderTab() {
                 </Center>
               ) : produtos.length === 0 ? (
                 <Center flexDir="column" py="12" opacity={0.4}>
-                  <Text fontSize="13px" color="whiteAlpha.500">
+                  <Text fontSize="13px" color="whiteAlpha.700">
                     Nenhum produto cadastrado
                   </Text>
-                  <Text fontSize="11px" color="whiteAlpha.400" mt="1">
+                  <Text fontSize="11px" color="whiteAlpha.600" mt="1">
                     Vá em Produtos para adicionar.
                   </Text>
                 </Center>
@@ -1219,9 +1222,9 @@ export function OrderTab() {
                       cursor="pointer"
                       p="4"
                       minH="88px"
-                      bg="whiteAlpha.50"
+                      bg="whiteAlpha.100"
                       borderWidth="1px"
-                      borderColor="whiteAlpha.100"
+                      borderColor="whiteAlpha.200"
                       rounded="xl"
                       transition="all 0.15s"
                       _hover={{
@@ -1272,9 +1275,9 @@ export function OrderTab() {
         motionPreset="slide-in-bottom"
       >
         <DialogContent
-          bg="var(--color-surface)"
+          bg={panelBg}
           borderWidth="1px"
-          borderColor="var(--color-edge)"
+          borderColor="whiteAlpha.200"
           rounded="2xl"
           p="0"
           overflow="hidden"
@@ -1314,7 +1317,7 @@ export function OrderTab() {
             px={{ base: 5, md: 5 }}
             py="4"
             borderTopWidth="1px"
-            borderColor="var(--color-edge)"
+            borderColor="whiteAlpha.200"
           >
             <Button
               w="full"
@@ -1351,9 +1354,9 @@ export function OrderTab() {
         motionPreset="slide-in-bottom"
       >
         <DialogContent
-          bg="var(--color-surface)"
+          bg={panelBg}
           borderWidth="1px"
-          borderColor="var(--color-edge)"
+          borderColor="whiteAlpha.200"
           rounded="2xl"
           p="0"
           overflow="hidden"
@@ -1377,7 +1380,7 @@ export function OrderTab() {
             px="5"
             py="4"
             borderTopWidth="1px"
-            borderColor="var(--color-edge)"
+            borderColor="whiteAlpha.200"
             display="grid"
             gridTemplateColumns={{ base: "1fr", md: "1fr 1fr" }}
             gap="2"

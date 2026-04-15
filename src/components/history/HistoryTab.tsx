@@ -52,6 +52,7 @@ export function HistoryTab() {
   const [historico, setHistorico] = useState<HistoricoPedido[]>([]);
   const [historicoLoading, setHistoricoLoading] = useState(true);
   const [reprintingId, setReprintingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -126,12 +127,15 @@ export function HistoryTab() {
   const handleExcluir = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm("Remover esta venda do histórico?")) {
+      setDeletingId(id);
       try {
         await apiDeleteHistorico(id);
         setHistorico((prev) => prev.filter((h) => h.id !== id));
         toast.info("Registro removido");
       } catch {
         toast.error("Erro ao remover");
+      } finally {
+        setDeletingId(null);
       }
     }
   };
@@ -379,6 +383,8 @@ export function HistoryTab() {
                           size="sm"
                           rounded="lg"
                           aria-label="Excluir do histórico"
+                          loading={deletingId === venda.id}
+                          disabled={deletingId !== null}
                           onClick={(e) => handleExcluir(venda.id, e)}
                         >
                           <Trash2 size={16} />
