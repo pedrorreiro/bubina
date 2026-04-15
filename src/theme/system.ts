@@ -14,25 +14,37 @@ const appGlobalCss = {
     fontFamily: "body",
     letterSpacing: "-0.01em",
   },
+  "input, textarea, select": {
+    background: "rgba(255, 255, 255, 0.08)",
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    color: "#e8ecf5",
+  },
+  "input::placeholder, textarea::placeholder": {
+    color: "rgba(232, 236, 245, 0.55)",
+  },
   "@media (max-width: 767.98px)": {
     html: {
       scrollPaddingBottom:
         "calc(4rem + env(safe-area-inset-bottom, 0px) + 1.25rem)",
     },
   },
+  "*": {
+    scrollbarWidth: "auto",
+    scrollbarColor: "rgba(158, 170, 194, 0.55) rgba(255, 255, 255, 0.04)",
+  },
   "::-webkit-scrollbar": {
-    width: "5px",
-    height: "5px",
+    width: "10px",
+    height: "10px",
   },
   "::-webkit-scrollbar-track": {
-    background: "transparent",
+    background: "rgba(255, 255, 255, 0.04)",
   },
   "::-webkit-scrollbar-thumb": {
-    background: "rgba(255,255,255,0.05)",
-    borderRadius: "999px",
+    background: "rgba(158, 170, 194, 0.55)",
+    borderRadius: "10px",
   },
   "::-webkit-scrollbar-thumb:hover": {
-    background: "rgba(255,255,255,0.1)",
+    background: "rgba(177, 190, 216, 0.75)",
   },
   "::selection": {
     backgroundColor: "color-mix(in srgb, #5b9cf5 25%, transparent)",

@@ -166,7 +166,7 @@ export default function PaywallPage() {
             mb="6"
           >
             Eleve sua operação com o{" "}
-            <Text as="span" color={PRIMARY} fontStyle="italic">
+            <Text as="span" color="#22d3ee" fontStyle="italic">
               Pro
             </Text>
           </Heading>

@@ -12,7 +12,7 @@ export function Provider(props: ColorModeProviderProps) {
   return (
     <EmotionRegistry>
       <ChakraProvider value={system}>
-        <ColorModeProvider {...props} />
+        <ColorModeProvider {...props} forcedTheme="dark" />
       </ChakraProvider>
     </EmotionRegistry>
   )

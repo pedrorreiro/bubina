@@ -532,9 +532,8 @@ export default function LandingPage() {
               <Text
                 as="span"
                 display="inline"
-                bgGradient="linear(to-b, white, white, rgba(91,156,245,0.4))"
-                bgClip="text"
-                color="transparent"
+                color="#7ea8e8"
+                textShadow="0 0 12px rgba(91,156,245,0.16)"
               >
                 seu negócio.
               </Text>
