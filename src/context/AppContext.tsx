@@ -36,6 +36,7 @@ interface AppState {
   connectPrinter: (manualDevice?: BluetoothDevice) => Promise<void>;
   disconnectPrinter: () => void;
   updatePrinterStatus: () => void;
+  savePedido: (pedido: Pedido) => Promise<void>;
   printCupom: (pedido: Pedido) => Promise<void>;
   /** Só envia à impressora (pedido já existe no histórico). */
   reimprimirCupom: (pedido: Pedido) => Promise<void>;
@@ -189,9 +190,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await imprimirPedidoFisico(pedido);
   };
 
-  const printCupom = async (pedido: Pedido) => {
-    if (!printer) throw new Error("Nenhuma impressora conectada.");
-
+  const calcularTotalPedido = (pedido: Pedido) => {
     const subtotal = pedido.itens.reduce(
       (s, i) => s + (i.qtd === null ? i.preco_uni : (i.qtd ?? 1) * i.preco_uni),
       0,
@@ -201,8 +200,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const abat = d.tipo === "valor" ? d.valor : (total * d.valor) / 100;
       total = Math.max(0, total - abat);
     }
+    return total;
+  };
 
-    // 1. Sempre salvar no servidor antes da impressão (limite free + histórico)
+  const savePedido = async (pedido: Pedido) => {
+    const total = calcularTotalPedido(pedido);
     await storageAddHist({
       cpf: pedido.cpf || null,
       itens: pedido.itens,
@@ -210,15 +212,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       data: new Date().toISOString(),
       total,
     });
+  };
 
-    // 2. Impressão física — se falhar, o pedido já está salvo
+  const printCupom = async (pedido: Pedido) => {
+    if (!printer) throw new Error("Nenhuma impressora conectada.");
+
     try {
       await imprimirPedidoFisico(pedido);
     } catch (e) {
       console.error("Falha na impressão após salvar:", e);
-      throw new Error(
-        "Pedido salvo no histórico, mas a impressão falhou. Abra o histórico e use Reimprimir.",
-      );
+      throw new Error("A impressão falhou. Tente novamente.");
     }
   };
 
@@ -255,6 +258,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         connectPrinter,
         disconnectPrinter,
         updatePrinterStatus,
+        savePedido,
         printCupom,
         reimprimirCupom,
         testWidth,

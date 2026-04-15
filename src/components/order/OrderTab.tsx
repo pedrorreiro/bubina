@@ -44,6 +44,7 @@ import {
   Input as ChakraInput,
 } from "@chakra-ui/react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DialogRoot,
   DialogHeader,
@@ -356,6 +357,7 @@ export function OrderTab() {
     produtos,
     loja,
     printerStatus,
+    savePedido,
     printCupom,
     pedidoReaberto,
     setPedidoReaberto,
@@ -366,9 +368,12 @@ export function OrderTab() {
   const [cpf, setCpf] = useState("");
   const [itens, setItens] = useState<ItemPedido[]>([]);
   const [descontos, setDescontos] = useState<Desconto[]>([]);
+  const [saving, setSaving] = useState(false);
   const [printing, setPrinting] = useState(false);
-  const [finished, setFinished] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isPostSaveOpen, setIsPostSaveOpen] = useState(false);
+  const [savedPedido, setSavedPedido] = useState<Pedido | null>(null);
+  const [printBehavior, setPrintBehavior] = useState<"ask" | "auto">("ask");
 
   const [avNome, setAvNome] = useState("");
   const [avQtd, setAvQtd] = useState("");
@@ -381,10 +386,18 @@ export function OrderTab() {
   const [mobileView, setMobileView] = useState<"venda" | "cardapio">("venda");
   const [mounted, setMounted] = useState(false);
   const [stableDate, setStableDate] = useState<Date | undefined>(undefined);
+  const PRINT_BEHAVIOR_STORAGE_KEY = "thermal-printer:print-behavior";
 
   useEffect(() => {
     setMounted(true);
     setStableDate(new Date());
+  }, []);
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(PRINT_BEHAVIOR_STORAGE_KEY);
+    if (stored === "auto" || stored === "ask") {
+      setPrintBehavior(stored);
+    }
   }, []);
 
   const genId = () => Math.random().toString(36).substr(2, 9);
@@ -394,7 +407,6 @@ export function OrderTab() {
       setItens(pedidoReaberto.itens);
       setDescontos(pedidoReaberto.descontos);
       setCpf(pedidoReaberto.cpf || "");
-      setFinished(false);
       setPedidoReaberto(null);
       toast.success("Pedido reaberto para edição");
     }
@@ -499,25 +511,15 @@ export function OrderTab() {
     setDValor("");
   };
 
-  const handleImprimir = async () => {
+  const handleImprimirPedido = async (pedido: Pedido) => {
     try {
       if (printerStatus !== "connected") {
         toast.error("Conecte uma impressora");
         return;
       }
-      if (itens.length === 0) {
-        toast.error("Adicione itens primeiro");
-        return;
-      }
       setPrinting(true);
-      await printCupom({
-        cpf: cpf?.trim() || null,
-        itens,
-        descontos,
-        total: calcTotal(),
-      });
+      await printCupom(pedido);
       toast.success("Cupom impresso!");
-      handleNovoPedido();
     } catch (e) {
       toast.error(`Erro: ${e instanceof Error ? e.message : e}`);
     } finally {
@@ -525,11 +527,53 @@ export function OrderTab() {
     }
   };
 
+  const handleSalvarPedido = async () => {
+    if (itens.length === 0) {
+      toast.error("Adicione itens primeiro");
+      return;
+    }
+
+    const pedido: Pedido = {
+      cpf: cpf?.trim() || null,
+      itens,
+      descontos,
+      total: calcTotal(),
+    };
+
+    try {
+      setSaving(true);
+      await savePedido(pedido);
+      toast.success("Pedido salvo com sucesso");
+
+      if (printBehavior === "auto") {
+        if (printerStatus === "connected") {
+          await handleImprimirPedido(pedido);
+        } else {
+          toast.error("Pedido salvo, mas a impressora está desconectada");
+        }
+        handleNovoPedido();
+        return;
+      }
+
+      setSavedPedido(pedido);
+      setIsPostSaveOpen(true);
+    } catch (e) {
+      toast.error(`Erro ao salvar pedido: ${e instanceof Error ? e.message : e}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleNovoPedido = () => {
     setItens([]);
     setDescontos([]);
     setCpf("");
-    setFinished(false);
+  };
+
+  const handlePrintBehaviorChange = (checked: boolean | "indeterminate") => {
+    const nextBehavior = checked === true ? "auto" : "ask";
+    setPrintBehavior(nextBehavior);
+    window.localStorage.setItem(PRINT_BEHAVIOR_STORAGE_KEY, nextBehavior);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -847,39 +891,28 @@ export function OrderTab() {
               </Flex>
 
               {/* Action button */}
-              {finished ? (
-                <Button
-                  w="full"
-                  h="12"
-                  rounded="xl"
-                  bg="whiteAlpha.100"
-                  color="white"
-                  fontWeight="700"
-                  _hover={{ bg: "whiteAlpha.200" }}
-                  onClick={handleNovoPedido}
-                >
-                  <RotateCcw size={16} />
-                  <Text ml="2">Nova Venda</Text>
-                </Button>
-              ) : (
-                <Button
-                  w="full"
-                  h="12"
-                  rounded="xl"
-                  colorPalette="blue"
-                  fontWeight="700"
-                  disabled={
-                    printing ||
-                    printerStatus !== "connected" ||
-                    itens.length === 0
-                  }
-                  onClick={handleImprimir}
-                  loading={printing}
-                >
-                  <PrinterIcon size={18} />
-                  <Text ml="2">Imprimir</Text>
-                </Button>
-              )}
+              <Button
+                w="full"
+                h="12"
+                rounded="xl"
+                colorPalette="blue"
+                fontWeight="700"
+                disabled={saving || printing || itens.length === 0}
+                onClick={handleSalvarPedido}
+                loading={saving}
+              >
+                <RotateCcw size={18} />
+                <Text ml="2">Concluir venda</Text>
+              </Button>
+
+              <Checkbox
+                checked={printBehavior === "auto"}
+                onCheckedChange={(e) => handlePrintBehaviorChange(e.checked)}
+              >
+                <Text fontSize="12px" color="whiteAlpha.700">
+                  Imprimir automaticamente ao salvar
+                </Text>
+              </Checkbox>
 
               {printerStatus !== "connected" && (
                 <HStack justify="center" gap="2" py="1">
@@ -1290,11 +1323,93 @@ export function OrderTab() {
               rounded="lg"
               fontWeight="700"
               onClick={() => {
-                handleImprimir();
+                handleImprimirPedido(buildPedido());
                 setIsPreviewOpen(false);
               }}
               disabled={printing || printerStatus !== "connected"}
               loading={printing}
+            >
+              <PrinterIcon size={16} />
+              <Text ml="2">Imprimir agora</Text>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </DialogRoot>
+
+      {/* ── Pós-salvamento ─────────────────────────────────────────────── */}
+      <DialogRoot
+        open={isPostSaveOpen}
+        onOpenChange={(e) => {
+          setIsPostSaveOpen(e.open);
+          if (!e.open) {
+            setSavedPedido(null);
+            handleNovoPedido();
+          }
+        }}
+        size="sm"
+        placement="center"
+        motionPreset="slide-in-bottom"
+      >
+        <DialogContent
+          bg="var(--color-surface)"
+          borderWidth="1px"
+          borderColor="var(--color-edge)"
+          rounded="2xl"
+          p="0"
+          overflow="hidden"
+        >
+          <DialogHeader px="5" py="4" pr="10">
+            <Flex justify="space-between" align="center" w="full">
+              <DialogTitle fontSize="14px" fontWeight="700">
+                Pedido salvo
+              </DialogTitle>
+              <DialogCloseTrigger>
+                <X size={16} />
+              </DialogCloseTrigger>
+            </Flex>
+          </DialogHeader>
+          <DialogBody px="5" pb="5">
+            <Text fontSize="13px" color="whiteAlpha.700">
+              Deseja imprimir este pedido agora?
+            </Text>
+          </DialogBody>
+          <DialogFooter
+            px="5"
+            py="4"
+            borderTopWidth="1px"
+            borderColor="var(--color-edge)"
+            display="grid"
+            gridTemplateColumns={{ base: "1fr", md: "1fr 1fr" }}
+            gap="2"
+          >
+            <Button
+              variant="outline"
+              h="11"
+              rounded="lg"
+              onClick={() => {
+                setIsPostSaveOpen(false);
+                setSavedPedido(null);
+                handleNovoPedido();
+                toast.success("Pedido concluído sem impressão.");
+              }}
+            >
+              Agora não
+            </Button>
+            <Button
+              colorPalette="blue"
+              h="11"
+              rounded="lg"
+              disabled={
+                printing || printerStatus !== "connected" || savedPedido === null
+              }
+              loading={printing}
+              onClick={async () => {
+                if (!savedPedido) return;
+                await handleImprimirPedido(savedPedido);
+                setIsPostSaveOpen(false);
+                setSavedPedido(null);
+                handleNovoPedido();
+              }}
             >
               <PrinterIcon size={16} />
               <Text ml="2">Imprimir agora</Text>
