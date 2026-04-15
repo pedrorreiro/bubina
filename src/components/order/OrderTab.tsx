@@ -911,6 +911,16 @@ export function OrderTab() {
               <Checkbox
                 checked={printBehavior === "auto"}
                 onCheckedChange={(e) => handlePrintBehaviorChange(e.checked)}
+                css={{
+                  "& [data-part='control']": {
+                    bg: "whiteAlpha.100",
+                    borderColor: "whiteAlpha.200",
+                  },
+                  "& [data-part='control'][data-state='checked']": {
+                    bg: "blue.500",
+                    borderColor: "blue.500",
+                  },
+                }}
               >
                 <Text fontSize="12px" color="whiteAlpha.700">
                   Imprimir automaticamente ao salvar

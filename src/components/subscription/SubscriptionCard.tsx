@@ -27,6 +27,7 @@ import {
 } from "@chakra-ui/react";
 import { Button } from "@/components/ui/button";
 import { appPanelProps } from "@/theme/layout";
+import { PRO_FEATURE_HIGHLIGHTS } from "@/constants/pro-features";
 
 export function SubscriptionCard() {
   const {
@@ -119,6 +120,9 @@ export function SubscriptionCard() {
   };
 
   const statusConfig = getStatusConfig(sub, hoursRemaining / 24);
+  const showRenewalDate =
+    (sub.reason === "paid" || sub.reason === "trial" || sub.isCanceling) &&
+    (sub.currentPeriodEnd || (sub.reason === "trial" && sub.trialEndsAt));
 
   return (
     <Box {...appPanelProps} overflow="hidden" h="full">
@@ -177,8 +181,7 @@ export function SubscriptionCard() {
                 {statusConfig.description}
               </Text>
 
-              {(sub.currentPeriodEnd ||
-                (sub.reason === "trial" && sub.trialEndsAt)) && (
+              {showRenewalDate && (
                 <Box
                   mt="2"
                   py="1"
@@ -322,12 +325,7 @@ export function SubscriptionCard() {
                   gapY="3"
                   gapX="6"
                 >
-                  {[
-                    "Impressões Ilimitadas",
-                    "Catálogo Custom",
-                    "Logo no Cupom",
-                    "Suporte 24h",
-                  ].map((feat, i) => (
+                  {PRO_FEATURE_HIGHLIGHTS.map((feat, i) => (
                     <HStack key={i} gap="2.5">
                       <CheckCircle2 size={14} color="#60a5fa" />
                       <Text
@@ -344,27 +342,24 @@ export function SubscriptionCard() {
 
               <Button
                 asChild
-                h="12"
-                colorPalette="blue"
+                h="11"
                 rounded="xl"
                 fontWeight="700"
+                bg="blue.500/20"
+                color="white"
+                borderWidth="1px"
+                borderColor="blue.400/40"
+                boxShadow="none"
+                _hover={{ bg: "blue.500/28", borderColor: "blue.300/50" }}
+                _active={{ bg: "blue.500/36" }}
+                transition="all 0.15s ease"
               >
                 <a href="/paywall">
-                  <Zap size={18} />
-                  <Box textAlign="left">
-                    <Text
-                      fontSize="xs"
-                      fontWeight="bold"
-                      textTransform="uppercase"
-                      lineHeight="1"
-                    >
-                      Assinar Bubina Pro
-                    </Text>
-                    <Text fontSize="9px" color="whiteAlpha.600" mt="1">
-                      Libere todos os recursos agora
-                    </Text>
-                  </Box>
-                  <ArrowRight size={18} />
+                  <Zap size={16} />
+                  <Text fontSize="sm" fontWeight="semibold">
+                    Assinar Bubina Pro
+                  </Text>
+                  <ArrowRight size={16} />
                 </a>
               </Button>
             </Stack>

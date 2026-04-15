@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PlanCard } from "@/components/subscription/PlanCard";
 import { useSubscription } from "@/hooks/useSubscription";
+import { stripeApi } from "@/services/api/stripe";
 import {
   Zap,
   Shield,
@@ -13,6 +14,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import {
+  PAYWALL_COMPARISON_FEATURES,
+  PLAN_ANNUAL_FEATURES,
+  PLAN_MONTHLY_FEATURES,
+} from "@/constants/pro-features";
 import {
   Box,
   Flex,
@@ -31,6 +37,43 @@ const MUTED = "#8f98ad";
 export default function PaywallPage() {
   const { createCheckout } = useSubscription();
   const [loading, setLoading] = useState<"monthly" | "annual" | null>(null);
+  const [monthlyPrice, setMonthlyPrice] = useState("-");
+  const [annualMonthlyEquivalent, setAnnualMonthlyEquivalent] = useState("-");
+  const [annualDescription, setAnnualDescription] = useState(
+    "Cobrança anual. Economia para negócios consolidados.",
+  );
+
+  useEffect(() => {
+    const toMoney = (amountInCents: number, currency: string) =>
+      new Intl.NumberFormat("pt-BR", {
+        style: "currency",
+        currency: currency.toUpperCase(),
+      }).format(amountInCents / 100);
+
+    const loadPrices = async () => {
+      try {
+        const data = await stripeApi.getPrices();
+        const monthly = data.monthly;
+        const annual = data.annual;
+
+        if (monthly?.unitAmount && monthly.currency) {
+          setMonthlyPrice(toMoney(monthly.unitAmount, monthly.currency));
+        }
+
+        if (annual?.unitAmount && annual.currency) {
+          const monthlyEquivalent = annual.unitAmount / 12;
+          setAnnualMonthlyEquivalent(toMoney(monthlyEquivalent, annual.currency));
+          setAnnualDescription(
+            `Cobrança anual de ${toMoney(annual.unitAmount, annual.currency)}. Economia para negócios consolidados.`,
+          );
+        }
+      } catch (e) {
+        console.error("Erro ao carregar preços do Stripe:", e);
+      }
+    };
+
+    loadPrices();
+  }, []);
 
   const handleCheckout = async (priceType: "monthly" | "annual") => {
     setLoading(priceType);
@@ -50,16 +93,6 @@ export default function PaywallPage() {
       setLoading(null);
     }
   };
-
-  const COMPARISON_FEATURES = [
-    { label: "Limite de Impressões", free: "15 por dia", pro: "Ilimitado" },
-    { label: "Catálogo de Itens", free: "-", pro: "Ilimitado" },
-    { label: "Logomarca no Cupom", free: "-", pro: "Sua logomarca" },
-    { label: "Rodapé Personalizado", free: "Padrão", pro: "Remova ou Altere" },
-    { label: "Vendas Manuais", free: "Liberado", pro: "Liberado" },
-    { label: "Suporte Técnico", free: "-", pro: "Chat Prioritário" },
-    { label: "Histórico de Pedidos", free: "-", pro: "Ilimitado" },
-  ];
 
   return (
     <Flex
@@ -146,26 +179,21 @@ export default function PaywallPage() {
         <SimpleGrid columns={{ base: 1, md: 2 }} gap="8" mb="16" maxW="4xl" mx="auto">
           <PlanCard
             title="Assinatura Mensal"
-            price="R$ 20"
+            price={monthlyPrice}
             period="/mês"
             description="Flexibilidade total para o seu dia a dia."
-            features={["Logomarca no Cupom", "Rodapé Personalizado", "Histórico Completo"]}
+            features={PLAN_MONTHLY_FEATURES}
             onSelect={() => handleCheckout("monthly")}
             loading={loading === "monthly"}
             disabled={loading !== null}
           />
           <PlanCard
             title="Assinatura Anual"
-            price="R$ 200"
-            period="/ano"
-            description="Economia para negócios consolidados. Pagamento único."
+            price={annualMonthlyEquivalent}
+            period="/mês"
+            description={annualDescription}
             badge="17% DE ECONOMIA"
-            features={[
-              "Tudo do plano Mensal",
-              "2 meses de bônus",
-              "Prioridade em Features",
-              "Suporte VIP",
-            ]}
+            features={PLAN_ANNUAL_FEATURES}
             highlighted
             onSelect={() => handleCheckout("annual")}
             loading={loading === "annual"}
@@ -241,7 +269,7 @@ export default function PaywallPage() {
                   </Table.Row>
                 </Table.Header>
                 <Table.Body>
-                  {COMPARISON_FEATURES.map((row, i) => (
+                  {PAYWALL_COMPARISON_FEATURES.map((row, i) => (
                     <Table.Row
                       key={i}
                       borderBottomWidth="1px"
@@ -282,7 +310,7 @@ export default function PaywallPage() {
                 </Text>
               </Grid>
               <Flex direction="column" gap="1">
-                {COMPARISON_FEATURES.map((row, i) => (
+                {PAYWALL_COMPARISON_FEATURES.map((row, i) => (
                   <Grid
                     key={i}
                     templateColumns="1.5fr 1fr 1fr"
